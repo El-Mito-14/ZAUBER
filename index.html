@@ -40,12 +40,12 @@
     <div id="inputPane" class="pane">
       <div class="stage grow">
         <canvas id="preview3d"></canvas>
-        <button class="info" data-info="input" aria-label="Hinweise">i</button>
         <div class="palbar" id="palette" hidden></div>
         <div class="overlay" id="inToast"></div>
       </div>
       <div id="errBox" class="err" hidden></div>
       <div class="row">
+        <button class="infoBtn" data-info="input" aria-label="Hinweise">i</button>
         <button id="btnClear">Leeren</button>
         <button id="btnFromCube">Vom 3D-Würfel</button>
       </div>
@@ -61,6 +61,9 @@
       <canvas id="netMini" class="netMini"></canvas>
       <div class="move" id="moveBig">–</div>
       <div class="moveDesc" id="moveDesc"></div>
+      <details id="algBox" class="algBox"><summary>Algorithmus anzeigen</summary>
+        <div id="algName" class="algName"></div><div id="algMoves" class="algMoves"></div><div id="algText" class="algText"></div>
+      </details>
       <div class="row ctrl">
         <button id="bStart">⏮</button>
         <button id="bBack">◀</button>
@@ -73,17 +76,39 @@
         <label class="check"><input type="checkbox" id="chkFollow"> Ansicht folgt dem Zug</label>
         <select id="selSpeed" aria-label="Geschwindigkeit"></select>
       </div>
-      <button id="btnBackInput" class="wide">✎ Muster neu eingeben</button>
+      <div class="row"><button id="btnRecipe">📖 Rezept</button><button id="btnBackInput">✎ Neu eingeben</button></div>
+    </div>
+  </section>
+  <!-- Lektionen -->
+  <section id="screen-lessons" class="screen">
+    <div id="lessonList"></div>
+    <div id="lessonDetail" hidden>
+      <div class="row"><button id="lBack">← Alle Lektionen</button></div>
+      <h2 id="lTitle"></h2>
+      <p id="lDesc" class="lDesc"></p>
+      <div class="stage big"><canvas id="lesson3d"></canvas></div>
+      <div class="algMoves big" id="lMoves"></div>
+      <div class="row ctrl">
+        <button id="lStart">⏮</button>
+        <button id="lBackStep">◀</button>
+        <button id="lAuto" class="primary">▶ Auto</button>
+        <button id="lNext">▶ Weiter</button>
+      </div>
+      <div class="status" id="lInfo"></div>
+      <div class="row"><span class="legendTxt">Farbig = beteiligte Steine, grau = bleiben egal. Rote Umrandung = Seite, die gedreht wird.</span>
+        <select id="selSpeedLesson" aria-label="Geschwindigkeit"></select></div>
     </div>
   </section>
 </main>
 <nav>
   <button id="tab-cube" class="active">🧊 Würfel</button>
   <button id="tab-solve">🧩 Lösen</button>
+  <button id="tab-lessons">🎓 Lektionen</button>
 </nav>
 <div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide">OK</button></div></div>
 <script src="cube.js"></script>
 <script src="solver.js"></script>
+<script src="lessons.js"></script>
 <script src="render.js"></script>
 <script src="app.js"></script>
 </body>

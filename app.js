@@ -16,38 +16,58 @@
       '<p><b>Ansicht drehen:</b> Neben den Würfel wischen. Alternativ „👁 Ansicht drehen“ einschalten – dann dreht jede Wischgeste nur die Ansicht.</p>' +
       '<p><b>Mischen / Zurück / Neu:</b> Mischen verdreht den Würfel zufällig, Zurück macht den letzten Zug rückgängig, Neu setzt den Würfel zurück.</p>' +
       '<p><b>Lösen:</b> Der Würfel löst sich selbst. Du kannst jederzeit pausieren oder stoppen und das Tempo ändern.</p>',
-    input: '<p><b>So geht’s:</b> Tippe ein Feld auf dem Würfel an. Oben erscheint die Farbauswahl – tippe die passende Farbe an, dann wird das Feld eingefärbt. Auch bereits eingefärbte Felder kannst du erneut antippen und korrigieren.</p>' +
+    input: '<p><b>So geht’s:</b> Tippe ein Feld auf dem Würfel an. Oben erscheint die Farbauswahl – tippe die passende Farbe an, dann wird das Feld eingefärbt. Auch bereits eingefärbte Felder kannst du erneut antippen und korrigieren. Die Farbauswahl schließt sich, wenn du eine Farbe wählst, irgendwo anders hintippst oder die Zurück-Taste deines Handys drückst.</p>' +
       '<p><b>Ansicht drehen:</b> Wische auf dem Würfel oder daneben, um ihn zu drehen und auch Unterseite und Rückseite zu erreichen.</p>' +
-      '<p><b>Mittelsteine</b> sind fest und nicht veränderbar. Halte deinen Würfel so: <b>Weiß oben, Grün vorne</b> (dann ist Rot rechts, Blau hinten, Orange links, Gelb unten). Hat dein Würfel ein anderes Farbschema, wähle die Haltung so, dass die Mittelsteine zu den Farben im Modell passen.</p>' +
+      '<p><b>Mittelsteine</b> sind fest und nicht veränderbar. Halte deinen Würfel so: <b>Gelb oben, Grün vorne</b> (dann ist Orange rechts, Rot links, Blau hinten, Weiß unten). Hat dein Würfel ein anderes Farbschema, wähle die Haltung so, dass die Mittelsteine zu den Farben im Modell passen.</p>' +
       '<p>Jede Farbe kommt genau 9-mal vor (Zähler an der Farbauswahl).</p>' +
       '<p><b>Leeren</b> löscht alle Felder außer den Mittelsteinen. <b>Vom 3D-Würfel</b> übernimmt den Zustand aus dem Reiter „Würfel“.</p>',
     solve: '<p><b>U</b> = Oben, <b>D</b> = Unten, <b>L</b> = Links, <b>R</b> = Rechts, <b>F</b> = Vorne, <b>B</b> = Hinten.</p>' +
       '<p>Ohne Zusatz: diese Seite eine Viertelumdrehung im Uhrzeigersinn drehen (mit Blick direkt auf die Seite). <b>\'</b> = gegen den Uhrzeigersinn. <b>2</b> = halbe Umdrehung.</p>' +
       '<p>Den Würfel während der Lösung nicht umdrehen – genau so halten wie bei der Eingabe. Die rot umrandete Seite im 3D-Würfel und im Netz ist die Seite, die du drehen musst.</p>'
   };
-  document.querySelectorAll('.info').forEach(function (b) {
-    b.onclick = function () { $('modalText').innerHTML = INFO[b.dataset.info]; $('modal').hidden = false; };
+  // ---------- Zurück-Taste (Android) ----------
+  var backStack = [], ignorePop = 0;
+  function pushBack(id, fn) { backStack.push({ id: id, fn: fn }); history.pushState({ z: 1 }, ''); }
+  function popBack(id) {
+    var top = backStack[backStack.length - 1];
+    if (top && top.id === id) { backStack.pop(); ignorePop++; history.back(); }
+    else backStack = backStack.filter(function (e) { return e.id !== id; });
+  }
+  window.addEventListener('popstate', function () {
+    if (ignorePop > 0) { ignorePop--; return; }
+    var e = backStack.pop(); if (e) e.fn();
   });
-  $('modalClose').onclick = function () { $('modal').hidden = true; };
-  $('modal').onclick = function (e) { if (e.target === $('modal')) $('modal').hidden = true; };
+  var modalOpen = false;
+  function openModal(html) {
+    $('modalText').innerHTML = html; $('modal').hidden = false;
+    if (!modalOpen) { modalOpen = true; pushBack('modal', hideModal); }
+  }
+  function hideModal() { $('modal').hidden = true; modalOpen = false; }
+  function closeModal() { if (modalOpen) { hideModal(); popBack('modal'); } }
+  document.querySelectorAll('[data-info]').forEach(function (b) {
+    b.onclick = function () { openModal(INFO[b.dataset.info]); };
+  });
+  $('modalClose').onclick = closeModal;
+  $('modal').onclick = function (e) { if (e.target === $('modal')) closeModal(); };
 
   // ---------- Tabs ----------
-  var cubeView, previewView, solveView;
+  var cubeView, previewView, solveView, lessonView;
   function showTab(name) {
-    ['cube', 'solve'].forEach(function (n) {
+    ['cube', 'solve', 'lessons'].forEach(function (n) {
       $('screen-' + n).classList.toggle('active', n === name);
       $('tab-' + n).classList.toggle('active', n === name);
     });
-    setTimeout(function () { [cubeView, previewView, solveView].forEach(function (v) { v && v.resize(); }); }, 30);
+    setTimeout(function () { [cubeView, previewView, solveView, lessonView].forEach(function (v) { v && v.resize(); }); }, 30);
   }
   $('tab-cube').onclick = function () { showTab('cube'); };
   $('tab-solve').onclick = function () { showTab('solve'); };
+  $('tab-lessons').onclick = function () { showTab('lessons'); };
 
   // ---------- Funktion 1: freier 3D-Würfel ----------
-  var history = [], moves = 0;
+  var undoStack = [], moves = 0;
   var autoRun = false, autoPaused = false, autoMoves = [], autoIdx = 0;
   cubeView = new CubeView($('cube3d'), {
-    onTurn: function (t) { history.push(t); moves++; updStatus(); }
+    onTurn: function (t) { undoStack.push(t); moves++; updStatus(); }
   });
   function updStatus(txt) { $('cubeStatus').textContent = txt || ('Züge: ' + moves + (C.isSolved(cubeView.state) && moves ? ' · Gelöst! 🎉' : '')); }
   $('btnViewMode').onclick = function () {
@@ -56,16 +76,16 @@
   function busy() { return cubeView.isBusy() || autoRun; }
   $('btnReset').onclick = function () {
     stopAuto(); cubeView.clearQueue(); cubeView.anim = null; cubeView.setState(C.solvedColors());
-    history = []; moves = 0; updStatus();
+    undoStack = []; moves = 0; updStatus();
   };
   $('btnUndo').onclick = function () {
-    if (busy() || !history.length) return;
-    var t = history.pop(); moves = Math.max(0, moves - 1);
+    if (busy() || !undoStack.length) return;
+    var t = undoStack.pop(); moves = Math.max(0, moves - 1);
     cubeView.enqueue({ k: t.k, c: t.c, steps: -t.steps }, 200, function () { updStatus(); });
   };
   $('btnScramble').onclick = function () {
     if (busy()) return;
-    history = []; moves = 0; var last = -1, n = 0;
+    undoStack = []; moves = 0; var last = -1, n = 0;
     while (n < 22) {
       var m = C.MOVE_NAMES[Math.floor(Math.random() * 18)];
       if (FACE_IDX[m[0]] === last) continue;
@@ -78,7 +98,7 @@
   function speedCube() { return parseInt($('selSpeedCube').value, 10); }
   function autoStep() {
     if (!autoRun || autoPaused) return;
-    if (autoIdx >= autoMoves.length) { stopAuto(); history = []; moves = 0; updStatus('Gelöst! 🎉'); return; }
+    if (autoIdx >= autoMoves.length) { stopAuto(); undoStack = []; moves = 0; updStatus('Gelöst! 🎉'); return; }
     var m = autoMoves[autoIdx];
     updStatus('Lösen: Zug ' + (autoIdx + 1) + ' von ' + autoMoves.length + ' (' + m + ')');
     cubeView.enqueueName(m, speedCube(), function () { autoIdx++; setTimeout(autoStep, 80); });
@@ -108,31 +128,37 @@
     else autoStep();
   };
   $('aStop').onclick = function () {
-    stopAuto(); cubeView.clearQueue(); history = []; moves = 0; updStatus('Gestoppt');
+    stopAuto(); cubeView.clearQueue(); undoStack = []; moves = 0; updStatus('Gestoppt');
   };
 
   // ---------- Funktion 2: Muster direkt am 3D-Würfel eingeben ----------
   var inp = new Int8Array(54), sel = -1, toastT = null;
   function clearInput() { inp.fill(-1); for (var f = 0; f < 6; f++) inp[f * 9 + 4] = C.SCHEME[f]; sel = -1; }
   clearInput();
-  var pal = $('palette');
+  var pal = $('palette'), palOpen = false;
   for (var c = 0; c < 6; c++) (function (c) {
     var b = document.createElement('button'); b.className = 'sw'; b.style.background = PALETTE[c];
     b.setAttribute('aria-label', C.COLOR_NAMES[c]); b.innerHTML = '<i></i>';
     b.onclick = function () { if (sel >= 0) { inp[sel] = c; closePalette(); $('errBox').hidden = true; refreshInput(); } };
     pal.appendChild(b);
   })(c);
-  var xb = document.createElement('button'); xb.className = 'x'; xb.textContent = '✕'; xb.setAttribute('aria-label', 'Schließen');
-  xb.onclick = function () { closePalette(); }; pal.appendChild(xb);
-  function closePalette() { sel = -1; previewView.selected = -1; pal.hidden = true; }
+  function hidePalette() { sel = -1; palOpen = false; if (previewView) previewView.selected = -1; pal.hidden = true; }
+  function closePalette() { if (palOpen) { hidePalette(); popBack('pal'); } }
   function toast(t) { $('inToast').textContent = t; clearTimeout(toastT); toastT = setTimeout(function () { $('inToast').textContent = ''; }, 2000); }
   previewView = new CubeView($('preview3d'), {
     layerDrag: false,
     onTap: function (i) {
-      if (i % 9 === 4) { toast('Mittelsteine sind fest.'); return; }
-      sel = i; previewView.selected = i; pal.hidden = false; refreshInput();
+      if (i < 0) { closePalette(); return; }
+      if (i % 9 === 4) { closePalette(); toast('Mittelsteine sind fest.'); return; }
+      sel = i; previewView.selected = i; pal.hidden = false;
+      if (!palOpen) { palOpen = true; pushBack('pal', hidePalette); }
     }
   });
+  document.addEventListener('pointerdown', function (e) {
+    if (!palOpen) return;
+    if (pal.contains(e.target) || e.target === $('preview3d')) return;
+    closePalette();
+  }, true);
   function refreshInput() {
     var cnt = [0, 0, 0, 0, 0, 0];
     for (var i = 0; i < 54; i++) if (inp[i] >= 0) cnt[inp[i]]++;
@@ -157,9 +183,15 @@
       startPlan(r);
     }, 40);
   };
+  var LABELS = S.LABELS, plan = null;
   function startPlan(r) {
-    flat = []; states = [Uint8Array.from(inp)];
-    r.phases.forEach(function (p) { p.moves.forEach(function (m, i) { flat.push({ m: m, p: p, first: i === 0 }); }); });
+    plan = r; flat = []; states = [Uint8Array.from(inp)];
+    r.phases.forEach(function (p) {
+      p.startIdx = -1;
+      p.segs.forEach(function (sg) {
+        sg.moves.forEach(function (m, j) { if (p.startIdx < 0) p.startIdx = flat.length; flat.push({ m: m, p: p, seg: sg, pos: j, first: p.startIdx === flat.length }); });
+      });
+    });
     flat.forEach(function (st, i) { states.push(C.applyMove(states[i], st.m)); });
     idx = 0; auto = false; $('bAuto').textContent = '▶ Auto';
     $('inputPane').hidden = true; $('solvePane').hidden = false;
@@ -175,6 +207,14 @@
     var t = m.length === 1 ? 'im Uhrzeigersinn' : (m[1] === '2' ? 'halbe Umdrehung (2×)' : 'gegen den Uhrzeigersinn');
     return FACE_DE[m[0]] + ' · ' + t;
   }
+  function renderAlg(st) {
+    if (!st) { $('algName').textContent = ''; $('algMoves').innerHTML = ''; $('algText').textContent = ''; return; }
+    var lab = LABELS[st.seg.k] || ['Zugfolge', ''];
+    $('algName').textContent = lab[0]; $('algText').textContent = lab[1];
+    $('algMoves').innerHTML = st.seg.moves.map(function (m, j) {
+      return '<span class="' + (j < st.pos ? 'done' : j === st.pos ? 'cur' : '') + '">' + m + '</span>';
+    }).join('');
+  }
   function renderStep() {
     var n = flat.length, st = flat[idx];
     for (var i = 0; i < n; i++) $('chip' + i).className = 'chip' + (i < idx ? ' done' : '') + (i === idx ? ' cur' : '');
@@ -186,9 +226,10 @@
       if ($('chkFollow').checked) solveView.setViewFor(FACE_IDX[st.m[0]]);
     } else {
       $('moveBig').textContent = '🎉'; $('moveDesc').textContent = 'Der Würfel ist gelöst!';
-      $('phaseTitle').textContent = 'Fertig'; $('phaseDesc').textContent = 'Alle ' + n + ' Züge ausgeführt.';
+      $('phaseTitle').textContent = 'Fertig'; $('phaseDesc').textContent = n ? 'Alle ' + n + ' Züge ausgeführt.' : 'Der Würfel war schon gelöst.';
       solveView.highlight = -1;
     }
+    renderAlg(st);
     $('stepInfo').textContent = 'Zug ' + Math.min(idx + (st ? 1 : 0), n) + ' von ' + n;
     drawNet($('netMini'), solveView.state, st ? FACE_IDX[st.m[0]] : -1);
   }
@@ -219,6 +260,88 @@
   $('btnBackInput').onclick = function () {
     auto = false; solveView.clearQueue(); solveView.anim = null;
     $('solvePane').hidden = true; $('inputPane').hidden = false; setTimeout(function () { previewView.resize(); }, 30);
+  };
+
+  // ---------- Rezept ----------
+  $('btnRecipe').onclick = function () {
+    if (!plan) return;
+    var h = '<p><b>📖 Rezept: Schicht für Schicht</b></p><p>Die Lösung besteht aus 7 Schritten. Tippe auf einen Schritt, um dorthin zu springen.</p>';
+    plan.phases.forEach(function (p) {
+      var algs = [], seen = {};
+      p.segs.forEach(function (sg) {
+        if (sg.k === 'turn' || seen[sg.k]) return; seen[sg.k] = 1;
+        algs.push('<code>' + (LABELS[sg.k] ? LABELS[sg.k][0] : sg.k) + ': ' + sg.moves.join(' ') + '</code>');
+      });
+      var done = p.moves.length === 0;
+      h += '<div class="rcard' + (done ? ' done' : '') + '" data-start="' + (done ? -1 : p.startIdx) + '"><span class="no">' + p.no + '</span><b>' + p.name + '</b>' +
+        '<div style="font-size:13px;margin-top:4px">' + p.desc + '</div>' +
+        '<div class="meta">' + (done ? '✓ schon erledigt' : p.moves.length + ' Züge') + '</div>' + (done ? '' : algs.join('')) + '</div>';
+    });
+    openModal(h);
+  };
+  $('modalText').addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('.rcard') : null;
+    if (!el) return; var st = parseInt(el.dataset.start, 10);
+    if (st >= 0) { closeModal(); jump(st); }
+  });
+
+  // ---------- Lektionen ----------
+  lessonView = new CubeView($('lesson3d'), { layerDrag: false });
+  ;[['selSpeedLesson']].forEach(function (a) {
+    SPEEDS.forEach(function (sp) { var o = document.createElement('option'); o.value = sp[1]; o.textContent = 'Tempo: ' + sp[0]; if (sp[1] === 700) o.selected = true; $(a[0]).appendChild(o); });
+  });
+  (function buildList() {
+    var box = $('lessonList'), h = '';
+    LessonLib.LESSONS.forEach(function (cat, ci) {
+      h += '<div class="cat">' + cat.cat + '</div>';
+      cat.items.forEach(function (it, ii) {
+        h += '<button class="lcard" data-c="' + ci + '" data-i="' + ii + '">' + it.name + '<small>' + it.alg + '</small></button>';
+      });
+    });
+    box.innerHTML = h;
+    box.onclick = function (e) {
+      var b = e.target.closest ? e.target.closest('.lcard') : null; if (!b) return;
+      openLesson(LessonLib.LESSONS[+b.dataset.c].items[+b.dataset.i]);
+    };
+  })();
+  var lMoves = [], lStates = [], lIdx = 0, lAuto = false, lOpen = false;
+  function openLesson(it) {
+    var b = LessonLib.build(it.alg); lMoves = b.moves; lStates = [b.state];
+    lMoves.forEach(function (m, i) { lStates.push(C.applyMove(lStates[i], m)); });
+    lIdx = 0; lAuto = false; $('lAuto').textContent = '▶ Auto';
+    $('lTitle').textContent = it.name; $('lDesc').textContent = it.desc;
+    $('lessonList').hidden = true; $('lessonDetail').hidden = false;
+    if (!lOpen) { lOpen = true; pushBack('lesson', hideLesson); }
+    document.querySelector('main').scrollTop = 0;
+    setTimeout(function () { lessonView.resize(); lessonView.clearQueue(); lessonView.anim = null; lessonView.setState(lStates[0]); renderLesson(); }, 30);
+  }
+  function hideLesson() { lAuto = false; lOpen = false; lessonView.clearQueue(); lessonView.anim = null; $('lessonDetail').hidden = true; $('lessonList').hidden = false; }
+  function closeLesson() { if (lOpen) { hideLesson(); popBack('lesson'); } }
+  $('lBack').onclick = closeLesson;
+  function renderLesson() {
+    $('lMoves').innerHTML = lMoves.map(function (m, j) { return '<span class="' + (j < lIdx ? 'done' : j === lIdx ? 'cur' : '') + '">' + m + '</span>'; }).join('');
+    $('lInfo').textContent = lIdx >= lMoves.length ? 'Fertig – die beteiligten Steine sind wieder an ihrem Platz.' : 'Zug ' + (lIdx + 1) + ' von ' + lMoves.length;
+    lessonView.highlight = lIdx < lMoves.length ? FACE_IDX[lMoves[lIdx][0]] : -1;
+  }
+  function lDur() { return parseInt($('selSpeedLesson').value, 10); }
+  function lNext(cb) {
+    if (lessonView.isBusy() || lIdx >= lMoves.length) { lAuto = false; $('lAuto').textContent = '▶ Auto'; return; }
+    var m = lMoves[lIdx]; lIdx++; lessonView.highlight = -1;
+    lessonView.enqueueName(m, lDur(), function () { renderLesson(); if (cb) cb(); });
+  }
+  function lPrev() {
+    if (lessonView.isBusy() || lIdx <= 0) return;
+    lIdx--; lessonView.highlight = -1; lessonView.enqueueName(C.invertMove(lMoves[lIdx]), lDur(), renderLesson);
+  }
+  function lJump(i) { lessonView.clearQueue(); lessonView.anim = null; lAuto = false; $('lAuto').textContent = '▶ Auto'; lIdx = i; lessonView.setState(lStates[i]); renderLesson(); }
+  $('lNext').onclick = function () { lAuto = false; $('lAuto').textContent = '▶ Auto'; lNext(); };
+  $('lBackStep').onclick = function () { lAuto = false; $('lAuto').textContent = '▶ Auto'; lPrev(); };
+  $('lStart').onclick = function () { lJump(0); };
+  $('lAuto').onclick = function () {
+    if (lAuto) { lAuto = false; this.textContent = '▶ Auto'; return; }
+    if (lIdx >= lMoves.length) lJump(0);
+    lAuto = true; this.textContent = '⏸ Pause';
+    (function step() { if (!lAuto) return; lNext(function () { setTimeout(step, 150); }); })();
   };
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {});

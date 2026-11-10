@@ -5,7 +5,7 @@
   var FACE_NAMES = ['U', 'R', 'F', 'D', 'L', 'B'];
   var FACE_NORMALS = [[0,1,0],[1,0,0],[0,0,1],[0,-1,0],[-1,0,0],[0,0,-1]];
   // Standard-Farbschema -> Palette-IDs: 0 Weiß, 1 Gelb, 2 Rot, 3 Orange, 4 Grün, 5 Blau
-  var SCHEME = [0, 2, 4, 1, 3, 5]; // U weiß, R rot, F grün, D gelb, L orange, B blau
+  var SCHEME = [1, 3, 4, 0, 2, 5]; // Gelb oben, Weiß unten, Grün vorne, Blau hinten, Orange rechts, Rot links
   var COLOR_NAMES = ['Weiß', 'Gelb', 'Rot', 'Orange', 'Grün', 'Blau'];
 
   function faceSticker(f, r, c) {
