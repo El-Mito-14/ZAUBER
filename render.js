@@ -26,6 +26,7 @@
     canvas.addEventListener('pointermove', function (e) { self.move(e); });
     canvas.addEventListener('pointerup', function (e) { self.up(e); });
     canvas.addEventListener('pointercancel', function (e) { self.up(e); });
+    canvas.addEventListener('lostpointercapture', function (e) { self.up(e); });
     (function loop() { self.frame(); root.requestAnimationFrame(loop); })();
   }
   var P = CubeView.prototype;
@@ -156,14 +157,15 @@
     return [x1, v[1] * cp - z1 * sp];
   };
   P.down = function (e) {
+    if (this.drag) return; // zweiter Finger wird ignoriert
     if (this.anim && this.anim.live) return;
     var xy = this.localXY(e), hit = (this.layerDrag && !this.viewMode && !this.isBusy()) ? this.hitTest(xy[0], xy[1]) : null;
     this.canvas.setPointerCapture(e.pointerId);
     this.target = null;
-    this.drag = { x0: xy[0], y0: xy[1], x: xy[0], y: xy[1], hit: hit, maxMove: 0, tapHit: this.onTap ? this.hitTest(xy[0], xy[1]) : null, mode: hit ? 'pending' : 'view' };
+    this.drag = { id: e.pointerId, x0: xy[0], y0: xy[1], x: xy[0], y: xy[1], hit: hit, maxMove: 0, tapHit: this.onTap ? this.hitTest(xy[0], xy[1]) : null, mode: hit ? 'pending' : 'view' };
   };
   P.move = function (e) {
-    var d = this.drag; if (!d) return;
+    var d = this.drag; if (!d || e.pointerId !== d.id) return;
     var xy = this.localXY(e), dx = xy[0] - d.x, dy = xy[1] - d.y; d.x = xy[0]; d.y = xy[1];
     d.maxMove = Math.max(d.maxMove, Math.hypot(xy[0] - d.x0, xy[1] - d.y0));
     if (d.mode === 'view') {
@@ -194,8 +196,8 @@
     }
   };
   P.up = function (e) {
-    var d = this.drag; this.drag = null; if (!d) return;
-    if (d.mode !== 'layer' && d.maxMove < 9 && d.tapHit && this.onTap && e.type === 'pointerup') { this.onTap(C.indexMap[C.key(d.tapHit.p, d.tapHit.n)]); return; }
+    var d = this.drag; if (!d || (e.pointerId !== undefined && e.pointerId !== d.id)) return; this.drag = null;
+    if (d.mode !== 'layer' && d.maxMove < 9 && this.onTap && e.type === 'pointerup') { this.onTap(d.tapHit ? C.indexMap[C.key(d.tapHit.p, d.tapHit.n)] : -1); return; }
     if (d.mode === 'layer' && this.anim) {
       var a = this.anim, to = Math.abs(a.angle) > Math.PI / 2 * 0.3 ? Math.sign(a.angle) * Math.PI / 2 : 0;
       a.live = false; a.from = a.angle; a.to = to; a.t0 = performance.now();

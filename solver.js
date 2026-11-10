@@ -61,21 +61,17 @@
   // ---------- Makros ----------
   var ROT = { F: 'R', R: 'B', B: 'L', L: 'F', U: 'U', D: 'D' };
   function rotAlg(moves) { return moves.map(function (m) { return ROT[m[0]] + m.slice(1); }); }
-  function makeMacro(moves) {
+  function makeMacro(moves, label) {
     var perm = new Uint8Array(54); for (var i = 0; i < 54; i++) perm[i] = i;
     moves.forEach(function (m) { perm = C.applyPerm(perm, C.MOVE_PERMS[m]); });
-    return { moves: moves, perm: perm, cost: moves.length };
+    return { moves: moves, perm: perm, cost: moves.length, label: label || 'turn' };
   }
-  function rotations(alg, withInverse) {
+  function rotations(alg, label) {
     var out = [], cur = C.parseAlg(alg);
-    for (var r = 0; r < 4; r++) {
-      out.push(makeMacro(cur));
-      if (withInverse) out.push(makeMacro(C.invertMoves(cur)));
-      cur = rotAlg(cur);
-    }
+    for (var r = 0; r < 4; r++) { out.push(makeMacro(cur, label)); cur = rotAlg(cur); }
     return out;
   }
-  var UMOVES = ['U', "U'", 'U2'].map(function (m) { return makeMacro([m]); });
+  var UMOVES = ['U', "U'", 'U2'].map(function (m) { return makeMacro([m], 'turn'); });
   var ALG = {
     trigger: "R U R' U'",
     edgeR: "U R U' R' U' F' U F",
@@ -103,8 +99,8 @@
           var path = [], cur = nd;
           while (cur.p >= 0) { path.push(cur.m); cur = nodes[cur.p]; }
           path.reverse();
-          var moves = []; path.forEach(function (mi) { moves = moves.concat(macros[mi].moves); });
-          return { moves: moves, cost: nd.c, state: nd.s };
+          var moves = [], segs = []; path.forEach(function (mi) { moves = moves.concat(macros[mi].moves); segs.push({ k: macros[mi].label, moves: macros[mi].moves.slice() }); });
+          return { moves: moves, segs: segs, cost: nd.c, state: nd.s };
         }
         for (var mi2 = 0; mi2 < macros.length; mi2++) {
           var mc = macros[mi2], ns = C.applyPerm(nd.s, mc.perm), nk = keyFn(ns), nc = nd.c + mc.cost;
@@ -188,20 +184,30 @@
 
   // ---------- Lösen ----------
   function solveNormalized(s0) {
-    var s = s0, phases = [], names = ['', 'U', 'R', 'F', 'D', 'L', 'B'];
-    function add(no, moves, state) { phases.push({ no: no, moves: C.simplify(moves) }); return state; }
+    var s = s0, phases = [];
+    function add(no, segs, state) {
+      var out = [];
+      segs.forEach(function (sg) {
+        var last = out[out.length - 1];
+        if (sg.k === 'turn' && last && last.k === 'turn') last.moves = C.simplify(last.moves.concat(sg.moves));
+        else out.push({ k: sg.k, moves: sg.moves.slice() });
+      });
+      out = out.filter(function (sg) { return sg.moves.length; });
+      var flat = []; out.forEach(function (sg) { flat = flat.concat(sg.moves); });
+      phases.push({ no: no, segs: out, moves: flat }); return state;
+    }
 
     // Phase 1: Kreuz unten (alle 4 Kanten zugleich, freie Züge)
-    var freeMacros = C.MOVE_NAMES.map(function (m) { return makeMacro([m]); });
+    var freeMacros = C.MOVE_NAMES.map(function (m) { return makeMacro([m], 'cross'); });
     var kf = pieceKey(D_EDGES, []);
     var r = search(s, freeMacros, kf, goalOf(kf), 12);
     if (!r) return null;
-    s = add(1, r.moves, r.state);
+    s = add(1, [{ k: 'cross', moves: C.simplify(r.moves) }], r.state);
 
     // Phase 2: untere Ecken
     var cornerMacros = UMOVES.slice();
     for (var q = 0, cur = C.parseAlg(ALG.trigger); q < 4; q++, cur = rotAlg(cur)) {
-      cornerMacros.push(makeMacro(cur)); cornerMacros.push(makeMacro(C.invertMoves(cur)));
+      cornerMacros.push(makeMacro(cur, 'trigger')); cornerMacros.push(makeMacro(C.invertMoves(cur), 'triggerInv'));
     }
     var movesP = [], todo = D_CORNERS.slice();
     while (todo.length) {
@@ -214,14 +220,14 @@
         if (res && (!bestR || res.cost < bestR.cost)) bestR = res;
       });
       if (!bestR) return null;
-      movesP = movesP.concat(bestR.moves); s = bestR.state;
+      movesP = movesP.concat(bestR.segs); s = bestR.state;
     }
     s = add(2, movesP, s);
 
     // Phase 3: mittlere Kanten
     var edgeMacros = UMOVES.slice();
-    for (q = 0, cur = C.parseAlg(ALG.edgeR); q < 4; q++, cur = rotAlg(cur)) edgeMacros.push(makeMacro(cur));
-    for (q = 0, cur = C.parseAlg(ALG.edgeL); q < 4; q++, cur = rotAlg(cur)) edgeMacros.push(makeMacro(cur));
+    for (q = 0, cur = C.parseAlg(ALG.edgeR); q < 4; q++, cur = rotAlg(cur)) edgeMacros.push(makeMacro(cur, 'edgeR'));
+    for (q = 0, cur = C.parseAlg(ALG.edgeL); q < 4; q++, cur = rotAlg(cur)) edgeMacros.push(makeMacro(cur, 'edgeL'));
     movesP = [];
     for (;;) {
       var l2 = locate(s), solvedE = M_EDGES.filter(function (h) { return l2.e[h] === h * 2; });
@@ -233,7 +239,7 @@
         if (res && (!bestE || res.cost < bestE.cost)) bestE = res;
       });
       if (!bestE) return null;
-      movesP = movesP.concat(bestE.moves); s = bestE.state;
+      movesP = movesP.concat(bestE.segs); s = bestE.state;
     }
     s = add(3, movesP, s);
 
@@ -244,41 +250,59 @@
     function cornDigits(x) {
       var k = 0; cornTopIdx.forEach(function (ix) { var d = 0; for (var t = 0; t < 3; t++) if (x[ix[t]] === 0) d = t; k = k * 3 + d; }); return k;
     }
-    var m4 = UMOVES.concat([makeMacro(C.parseAlg(ALG.ollCross1)), makeMacro(C.parseAlg(ALG.ollCross2))]);
+    var m4 = UMOVES.concat([makeMacro(C.parseAlg(ALG.ollCross1), 'ollCross'), makeMacro(C.parseAlg(ALG.ollCross2), 'ollCross')]);
     var r4 = search(s, m4, edgeMask, function (k) { return k === 15; }, 40);
-    if (!r4) return null; s = add(4, r4.moves, r4.state);
+    if (!r4) return null; s = add(4, r4.segs, r4.state);
 
     // Phase 5: obere Ecken drehen (Oberseite einfarbig)
     var k5 = function (x) { return cornDigits(x) * 16 + edgeMask(x); };
-    var m5 = UMOVES.concat([makeMacro(C.parseAlg(ALG.sune)), makeMacro(C.invertMoves(C.parseAlg(ALG.sune)))]);
+    var m5 = UMOVES.concat([makeMacro(C.parseAlg(ALG.sune), 'sune'), makeMacro(C.invertMoves(C.parseAlg(ALG.sune)), 'antisune')]);
     var r5 = search(s, m5, k5, goalOf(k5), 50);
-    if (!r5) return null; s = add(5, r5.moves, r5.state);
+    if (!r5) return null; s = add(5, r5.segs, r5.state);
 
     // Phase 6: obere Ecken an die richtige Stelle
     var k6 = pieceKey([], U_CORNERS);
-    var m6 = UMOVES.concat(rotations(ALG.cornerCycle, false));
+    var m6 = UMOVES.concat(rotations(ALG.cornerCycle, 'cornerCycle'));
     var r6 = search(s, m6, k6, goalOf(k6), 60);
-    if (!r6) return null; s = add(6, r6.moves, r6.state);
+    if (!r6) return null; s = add(6, r6.segs, r6.state);
 
     // Phase 7: obere Kanten an die richtige Stelle (Würfel gelöst)
     var k7 = pieceKey(U_EDGES, U_CORNERS);
-    var m7 = UMOVES.concat(rotations(ALG.edgeCycleA, false)).concat(rotations(ALG.edgeCycleB, false));
+    var m7 = UMOVES.concat(rotations(ALG.edgeCycleA, 'edgeCycle')).concat(rotations(ALG.edgeCycleB, 'edgeCycle'));
     var r7 = search(s, m7, k7, goalOf(k7), 80);
-    if (!r7) return null; s = add(7, r7.moves, r7.state);
+    if (!r7) return null; s = add(7, r7.segs, r7.state);
 
     for (var i = 0; i < 54; i++) if (s[i] !== SOLVED_NORM[i]) return null;
     return phases;
   }
 
-  var PHASE_NAMES = [
-    '', 'Kreuz unten', 'Untere Ecken', 'Mittlere Kanten', 'Kreuz oben', 'Obere Ecken drehen', 'Obere Ecken platzieren', 'Obere Kanten platzieren'
-  ];
+  var ADJ_N = ['Weißes', 'Gelbes', 'Rotes', 'Oranges', 'Grünes', 'Blaues'];
+  var ADJ_P = ['Weiße', 'Gelbe', 'Rote', 'Orange', 'Grüne', 'Blaue'];
+  var LABELS = {
+    turn: ['Oberseite drehen', 'Die obere Schicht wird gedreht, damit der nächste Stein passend steht.'],
+    cross: ['Kreuz-Züge', 'Eine kurze Zugfolge, die die vier Kanten der unteren Schicht an ihren Platz bringt.'],
+    trigger: ['Trigger (Ecke einsetzen)', 'Der Grundbaustein „R U R\' U\'“. Er wird so oft wiederholt, bis die Ecke richtig sitzt.'],
+    triggerInv: ['Trigger rückwärts', 'Der Trigger in umgekehrter Reihenfolge – ebenfalls zum Einsetzen der Ecke.'],
+    edgeR: ['Kante nach rechts einsetzen', 'Setzt eine Kante aus der oberen Schicht in die mittlere Schicht ein (nach rechts).'],
+    edgeL: ['Kante nach links einsetzen', 'Setzt eine Kante aus der oberen Schicht in die mittlere Schicht ein (nach links).'],
+    ollCross: ['Kreuz-Algorithmus', 'Dreht die Kanten oben, bis ein Kreuz auf der Oberseite entsteht.'],
+    sune: ['Sune', 'Dreht obere Ecken, ohne das Kreuz oben zu zerstören.'],
+    antisune: ['Anti-Sune', 'Die Umkehrung der Sune – dreht obere Ecken in die andere Richtung.'],
+    cornerCycle: ['Ecken-Dreierzyklus', 'Tauscht drei obere Ecken im Kreis, alles andere bleibt unverändert.'],
+    edgeCycle: ['Kanten-Dreierzyklus', 'Tauscht drei obere Kanten im Kreis, alles andere bleibt unverändert.']
+  };
+  function phaseName(no, colors) {
+    var d = colors[3 * 9 + 4], u = colors[4];
+    return [
+      '', ADJ_N[d] + ' Kreuz', ADJ_P[d] + ' Ecken', 'Mittlere Kanten', ADJ_N[u] + ' Kreuz', ADJ_P[u] + ' Ecken drehen', 'Ecken platzieren', 'Kanten platzieren'
+    ][no];
+  }
   function phaseDesc(no, colors) {
     var n = C.COLOR_NAMES, d = n[colors[3 * 9 + 4]], u = n[colors[4]];
     return [
       '',
-      'Bringe die vier ' + d + '-Kanten unten so an ihren Platz, dass sie ein Kreuz bilden und die Seitenfarben zu den Mittelsteinen passen.',
-      'Setze die vier ' + d + '-Ecken unten ein, sodass die untere Schicht komplett ' + d + ' ist und die Seitenränder passen.',
+      'Bringe die vier ' + d + '-Kanten unten an ihren Platz. Sie bilden ein Kreuz, und die Seitenfarben passen zu den Mittelsteinen.',
+      'Setze die vier ' + d + '-Ecken unten ein. Danach ist die untere Schicht komplett ' + d + ' und die Seitenränder passen.',
       'Setze die vier Kanten der mittleren Schicht ein. Danach sind zwei Schichten fertig.',
       'Drehe die Kanten oben so, dass auf der Oberseite (' + u + ') ein Kreuz entsteht.',
       'Drehe die oberen Ecken, bis die ganze Oberseite einfarbig (' + u + ') ist.',
@@ -291,13 +315,13 @@
     if (!v.ok) return v;
     var raw = solveNormalized(v.normalized);
     if (!raw) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.' };
-    var phases = raw.filter(function (p) { return p.moves.length; }).map(function (p) {
-      return { no: p.no, name: PHASE_NAMES[p.no], desc: phaseDesc(p.no, colors), moves: p.moves };
+    var phases = raw.map(function (p) {
+      return { no: p.no, name: phaseName(p.no, colors), desc: phaseDesc(p.no, colors), moves: p.moves, segs: p.segs };
     });
     var total = 0; phases.forEach(function (p) { total += p.moves.length; });
     return { ok: true, phases: phases, total: total };
   }
 
-  var api = { validate: validate, solve: solve, ALG: ALG, makeMacro: makeMacro, locate: locate, edgeSlots: edgeSlots, cornerSlots: cornerSlots, SOLVED_NORM: SOLVED_NORM };
+  var api = { LABELS: LABELS, validate: validate, solve: solve, ALG: ALG, makeMacro: makeMacro, locate: locate, edgeSlots: edgeSlots, cornerSlots: cornerSlots, SOLVED_NORM: SOLVED_NORM };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SolverLib = api;
 })(typeof window !== 'undefined' ? window : this);
