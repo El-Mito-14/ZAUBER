@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2b2d31">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Zauber</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><h1>Zauber<span>würfel</span></h1></header>
+<main>
+  <!-- Funktion 1: 3D-Würfel -->
+  <section id="screen-cube" class="screen active">
+    <div class="stage"><canvas id="cube3d"></canvas></div>
+    <p class="hint" id="cubeHint">Auf den Würfel wischen = Schicht drehen · daneben wischen = Ansicht drehen</p>
+    <div class="row">
+      <button id="btnScramble">🔀 Mischen</button>
+      <button id="btnUndo">↶ Zurück</button>
+      <button id="btnReset">⟲ Neu</button>
+    </div>
+    <div class="row">
+      <button id="btnAutoSolve" class="primary">✨ Lösen</button>
+      <button id="btnToSolver">➜ Zum Eingeben/Lösen</button>
+    </div>
+    <label class="check"><input type="checkbox" id="chkViewMode"> Ansicht-Modus (jede Wischgeste dreht nur die Ansicht)</label>
+    <p class="status" id="cubeStatus">Züge: 0</p>
+  </section>
+
+  <!-- Funktion 2: Muster eingeben + Lösung -->
+  <section id="screen-solve" class="screen">
+    <div id="inputPane">
+      <p class="hint">Halte deinen Würfel wie im Netz unten: <b>Oben</b> nach oben, <b>Vorne</b> zu dir. Wähle eine Farbe und tippe die Felder an.</p>
+      <div class="palette" id="palette"></div>
+      <div class="net" id="net"></div>
+      <div class="stage small"><canvas id="preview3d"></canvas></div>
+      <div class="row">
+        <button id="btnStd">Gelöster Würfel</button>
+        <button id="btnClear">Alles leeren</button>
+        <button id="btnFromCube">Vom 3D-Würfel</button>
+      </div>
+      <div id="errBox" class="err" hidden></div>
+      <button id="btnCompute" class="primary wide">Lösung berechnen</button>
+    </div>
+
+    <div id="solvePane" hidden>
+      <div class="phase"><div id="phaseTitle"></div><div id="phaseDesc"></div></div>
+      <div class="stage"><canvas id="solve3d"></canvas></div>
+      <canvas id="netMini" class="netMini"></canvas>
+      <div class="move" id="moveBig">–</div>
+      <div class="moveDesc" id="moveDesc"></div>
+      <div class="row ctrl">
+        <button id="bStart">⏮</button>
+        <button id="bBack">◀</button>
+        <button id="bAuto" class="primary">▶ Auto</button>
+        <button id="bNext">▶ Weiter</button>
+      </div>
+      <div class="status" id="stepInfo"></div>
+      <div class="chips" id="chips"></div>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="chkFollow"> Ansicht folgt dem Zug</label>
+        <select id="selSpeed"><option value="500">langsam</option><option value="280" selected>normal</option><option value="120">schnell</option></select>
+      </div>
+      <details class="legend"><summary>Was bedeuten die Zeichen?</summary>
+        <p><b>U</b> = Oben, <b>D</b> = Unten, <b>L</b> = Links, <b>R</b> = Rechts, <b>F</b> = Vorne, <b>B</b> = Hinten.<br>
+        Ohne Zusatz: diese Seite eine Viertelumdrehung im Uhrzeigersinn drehen (mit Blick direkt auf die Seite). <b>'</b> = gegen den Uhrzeigersinn. <b>2</b> = halbe Umdrehung.<br>
+        Den Würfel während der Lösung nicht umdrehen – genau so halten wie bei der Eingabe.</p>
+      </details>
+      <button id="btnBackInput" class="wide">✎ Muster neu eingeben</button>
+    </div>
+  </section>
+</main>
+<nav>
+  <button id="tab-cube" class="active">🧊 Würfel</button>
+  <button id="tab-solve">🧩 Lösen</button>
+</nav>
+<script src="cube.js"></script>
+<script src="solver.js"></script>
+<script src="render.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
