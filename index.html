@@ -11,44 +11,53 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><h1>Zauber<span>würfel</span></h1></header>
 <main>
   <!-- Funktion 1: 3D-Würfel -->
   <section id="screen-cube" class="screen active">
-    <div class="stage"><canvas id="cube3d"></canvas></div>
-    <p class="hint" id="cubeHint">Auf den Würfel wischen = Schicht drehen · daneben wischen = Ansicht drehen</p>
+    <div class="stage grow">
+      <canvas id="cube3d"></canvas>
+      <button class="info" data-info="cube" aria-label="Hinweise">i</button>
+      <div class="overlay" id="cubeStatus">Züge: 0</div>
+    </div>
+    <div id="autoBar" class="row" hidden>
+      <button id="aPause" class="primary">⏸ Pause</button>
+      <button id="aStop">■ Stopp</button>
+      <select id="selSpeedCube" aria-label="Geschwindigkeit"></select>
+    </div>
     <div class="row">
       <button id="btnScramble">🔀 Mischen</button>
       <button id="btnUndo">↶ Zurück</button>
       <button id="btnReset">⟲ Neu</button>
     </div>
     <div class="row">
+      <button id="btnViewMode" class="toggle">👁 Ansicht drehen</button>
       <button id="btnAutoSolve" class="primary">✨ Lösen</button>
-      <button id="btnToSolver">➜ Zum Eingeben/Lösen</button>
     </div>
-    <label class="check"><input type="checkbox" id="chkViewMode"> Ansicht-Modus (jede Wischgeste dreht nur die Ansicht)</label>
-    <p class="status" id="cubeStatus">Züge: 0</p>
   </section>
 
   <!-- Funktion 2: Muster eingeben + Lösung -->
   <section id="screen-solve" class="screen">
-    <div id="inputPane">
-      <p class="hint">Halte deinen Würfel wie im Netz unten: <b>Oben</b> nach oben, <b>Vorne</b> zu dir. Wähle eine Farbe und tippe die Felder an.</p>
-      <div class="palette" id="palette"></div>
-      <div class="net" id="net"></div>
-      <div class="stage small"><canvas id="preview3d"></canvas></div>
-      <div class="row">
-        <button id="btnStd">Gelöster Würfel</button>
-        <button id="btnClear">Alles leeren</button>
-        <button id="btnFromCube">Vom 3D-Würfel</button>
+    <div id="inputPane" class="pane">
+      <div class="stage grow">
+        <canvas id="preview3d"></canvas>
+        <button class="info" data-info="input" aria-label="Hinweise">i</button>
+        <div class="palbar" id="palette" hidden></div>
+        <div class="overlay" id="inToast"></div>
       </div>
       <div id="errBox" class="err" hidden></div>
+      <div class="row">
+        <button id="btnClear">Leeren</button>
+        <button id="btnFromCube">Vom 3D-Würfel</button>
+      </div>
       <button id="btnCompute" class="primary wide">Lösung berechnen</button>
     </div>
 
     <div id="solvePane" hidden>
       <div class="phase"><div id="phaseTitle"></div><div id="phaseDesc"></div></div>
-      <div class="stage"><canvas id="solve3d"></canvas></div>
+      <div class="stage big">
+        <canvas id="solve3d"></canvas>
+        <button class="info" data-info="solve" aria-label="Hinweise">i</button>
+      </div>
       <canvas id="netMini" class="netMini"></canvas>
       <div class="move" id="moveBig">–</div>
       <div class="moveDesc" id="moveDesc"></div>
@@ -62,13 +71,8 @@
       <div class="chips" id="chips"></div>
       <div class="row">
         <label class="check"><input type="checkbox" id="chkFollow"> Ansicht folgt dem Zug</label>
-        <select id="selSpeed"><option value="500">langsam</option><option value="280" selected>normal</option><option value="120">schnell</option></select>
+        <select id="selSpeed" aria-label="Geschwindigkeit"></select>
       </div>
-      <details class="legend"><summary>Was bedeuten die Zeichen?</summary>
-        <p><b>U</b> = Oben, <b>D</b> = Unten, <b>L</b> = Links, <b>R</b> = Rechts, <b>F</b> = Vorne, <b>B</b> = Hinten.<br>
-        Ohne Zusatz: diese Seite eine Viertelumdrehung im Uhrzeigersinn drehen (mit Blick direkt auf die Seite). <b>'</b> = gegen den Uhrzeigersinn. <b>2</b> = halbe Umdrehung.<br>
-        Den Würfel während der Lösung nicht umdrehen – genau so halten wie bei der Eingabe.</p>
-      </details>
       <button id="btnBackInput" class="wide">✎ Muster neu eingeben</button>
     </div>
   </section>
@@ -77,6 +81,7 @@
   <button id="tab-cube" class="active">🧊 Würfel</button>
   <button id="tab-solve">🧩 Lösen</button>
 </nav>
+<div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide">OK</button></div></div>
 <script src="cube.js"></script>
 <script src="solver.js"></script>
 <script src="render.js"></script>

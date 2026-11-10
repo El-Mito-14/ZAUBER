@@ -16,7 +16,7 @@
     this.yaw = -0.55; this.pitch = 0.5; this.target = null;
     this.layerDrag = opts.layerDrag !== false; this.viewMode = false;
     this.queue = []; this.anim = null; this.highlight = -1;
-    this.onTurn = opts.onTurn || null; this.polys = []; this.drag = null; this.busy = false;
+    this.onTurn = opts.onTurn || null; this.onTap = opts.onTap || null; this.selected = -1; this.polys = []; this.drag = null; this.busy = false;
     var self = this;
     this.resize();
     if (root.ResizeObserver) new ResizeObserver(function () { self.resize(); }).observe(canvas.parentElement || canvas);
@@ -113,7 +113,7 @@
         polys.push({ pts: mk(H, H), d: dist, c: BODY, body: true, hit: outer ? { p: p, n: n } : null });
         if (outer) {
           var fi = C.indexMap[C.key(p, n)], col = this.state[fi];
-          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, face: C.stickers[fi].face, hl: this.highlight === C.stickers[fi].face, px: scale });
+          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, idx: fi, sel: this.selected === fi, face: C.stickers[fi].face, hl: this.highlight === C.stickers[fi].face, px: scale });
         }
       }
     }
@@ -128,6 +128,7 @@
       if (pl.body) { ctx.fillStyle = BODY; ctx.fill(); ctx.strokeStyle = BODY; ctx.lineWidth = 1; ctx.stroke(); }
       else {
         ctx.fillStyle = pl.c; ctx.strokeStyle = pl.c; ctx.lineWidth = pl.px * 0.1; ctx.fill(); ctx.stroke();
+        if (pl.sel) { ctx.strokeStyle = ACCENT; ctx.lineWidth = Math.max(3, pl.px * 0.12); ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.5, pl.px * 0.04); ctx.stroke(); }
         if (pl.hl) { ctx.strokeStyle = ACCENT; ctx.lineWidth = Math.max(2, pl.px * 0.07); ctx.stroke(); }
       }
     }
@@ -159,11 +160,12 @@
     var xy = this.localXY(e), hit = (this.layerDrag && !this.viewMode && !this.isBusy()) ? this.hitTest(xy[0], xy[1]) : null;
     this.canvas.setPointerCapture(e.pointerId);
     this.target = null;
-    this.drag = { x0: xy[0], y0: xy[1], x: xy[0], y: xy[1], hit: hit, mode: hit ? 'pending' : 'view' };
+    this.drag = { x0: xy[0], y0: xy[1], x: xy[0], y: xy[1], hit: hit, maxMove: 0, tapHit: this.onTap ? this.hitTest(xy[0], xy[1]) : null, mode: hit ? 'pending' : 'view' };
   };
   P.move = function (e) {
     var d = this.drag; if (!d) return;
     var xy = this.localXY(e), dx = xy[0] - d.x, dy = xy[1] - d.y; d.x = xy[0]; d.y = xy[1];
+    d.maxMove = Math.max(d.maxMove, Math.hypot(xy[0] - d.x0, xy[1] - d.y0));
     if (d.mode === 'view') {
       this.yaw += dx * 0.01; this.pitch = Math.max(-1.4, Math.min(1.4, this.pitch + dy * 0.01)); return;
     }
@@ -193,6 +195,7 @@
   };
   P.up = function (e) {
     var d = this.drag; this.drag = null; if (!d) return;
+    if (d.mode !== 'layer' && d.maxMove < 9 && d.tapHit && this.onTap && e.type === 'pointerup') { this.onTap(C.indexMap[C.key(d.tapHit.p, d.tapHit.n)]); return; }
     if (d.mode === 'layer' && this.anim) {
       var a = this.anim, to = Math.abs(a.angle) > Math.PI / 2 * 0.3 ? Math.sign(a.angle) * Math.PI / 2 : 0;
       a.live = false; a.from = a.angle; a.to = to; a.t0 = performance.now();
