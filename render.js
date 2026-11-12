@@ -4,6 +4,7 @@
   var C = root.CubeLib;
   var PALETTE = ['#ffffff', '#ffd500', '#c8102e', '#ff7f11', '#009b48', '#0a4fb4'];
   var GRAY = '#9a9ca3', BODY = '#1c1c1f', ACCENT = '#d62828';
+  root.setCubeAccent = function (c) { ACCENT = c; };
   var H = 0.485, SH = 0.4, CAM = 9;
   var VIEWS = [ // Ansicht je Fläche U R F D L B (yaw, pitch)
     [-0.5, 0.8], [-1.05, 0.35], [-0.45, 0.35], [-0.5, -0.7], [1.05, 0.35], [2.7, 0.35]
@@ -40,14 +41,14 @@
   P.isBusy = function () { return !!this.anim || this.queue.length > 0; };
   P.clearQueue = function () { this.queue = []; };
   // Zug einreihen: {k,c,steps}, dur in ms, cb nach Abschluss
-  P.enqueue = function (layer, dur, cb) { this.queue.push({ k: layer.k, c: layer.c, steps: layer.steps, dur: dur || 260, cb: cb }); };
+  P.enqueue = function (layer, dur, cb) { this.queue.push({ k: layer.k, cs: layer.cs || [layer.c], steps: layer.steps, dur: dur || 260, cb: cb }); };
   P.enqueueName = function (name, dur, cb) { this.enqueue(C.moveToLayer(name), dur, cb); };
 
   P.frame = function () {
     var now = performance.now();
     if (!this.anim && this.queue.length) {
       var q = this.queue.shift();
-      this.anim = { k: q.k, c: q.c, from: 0, to: q.steps * Math.PI / 2, t0: now, dur: q.dur, cb: q.cb, live: false };
+      this.anim = { k: q.k, cs: q.cs, from: 0, to: q.steps * Math.PI / 2, t0: now, dur: q.dur, cb: q.cb, live: false };
     }
     var a = this.anim;
     if (a && !a.live) {
@@ -65,8 +66,8 @@
   P.finish = function () {
     var a = this.anim, steps = Math.round(a.to / (Math.PI / 2));
     this.anim = null;
-    if (steps !== 0) this.state = C.applyPerm(this.state, C.layerPerm(a.k, a.c, steps));
-    if (steps !== 0 && a.user && this.onTurn) this.onTurn({ k: a.k, c: a.c, steps: steps });
+    if (steps !== 0) this.state = C.applyPerm(this.state, C.multiPerm(a.k, a.cs, steps));
+    if (steps !== 0 && a.user && this.onTurn) this.onTurn({ k: a.k, c: a.cs[0], steps: steps });
     if (a.cb) a.cb(steps);
   };
 
@@ -76,13 +77,11 @@
     if (k === 1) return [x * cs + z * sn, y, -x * sn + z * cs];
     return [x * cs - y * sn, x * sn + y * cs, z];
   }
-  P.draw = function () {
-    var ctx = this.ctx, W = this.W, Hh = this.H, self = this;
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+  function paintCube(ctx, W, Hh, dpr, state, yaw, pitch, an, highlight, selected) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, Hh);
     var scale = Math.min(W, Hh) / 5.3, cx = W / 2, cy = Hh / 2, f = scale * CAM;
-    var cyw = Math.cos(this.yaw), syw = Math.sin(this.yaw), cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
-    var an = this.anim;
+    var cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
     function view(v) {
       var x1 = v[0] * cyw + v[2] * syw, z1 = -v[0] * syw + v[2] * cyw, y1 = v[1];
       return [x1, y1 * cp - z1 * sp, y1 * sp + z1 * cp];
@@ -90,7 +89,7 @@
     var polys = [], i, a, sgn, ax1, ax2;
     for (var x = -1; x <= 1; x++) for (var y = -1; y <= 1; y++) for (var z = -1; z <= 1; z++) {
       if (!x && !y && !z) continue;
-      var p = [x, y, z], inL = an && p[an.k] === an.c, th = inL ? an.angle || 0 : 0;
+      var p = [x, y, z], inL = an && an.cs.indexOf(p[an.k]) >= 0, th = inL ? an.angle || 0 : 0;
       for (a = 0; a < 3; a++) for (sgn = -1; sgn <= 1; sgn += 2) {
         var n = [0, 0, 0]; n[a] = sgn;
         ax1 = (a + 1) % 3; ax2 = (a + 2) % 3;
@@ -113,13 +112,12 @@
         };
         polys.push({ pts: mk(H, H), d: dist, c: BODY, body: true, hit: outer ? { p: p, n: n } : null });
         if (outer) {
-          var fi = C.indexMap[C.key(p, n)], col = this.state[fi];
-          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, idx: fi, sel: this.selected === fi, face: C.stickers[fi].face, hl: this.highlight === C.stickers[fi].face, px: scale });
+          var fi = C.indexMap[C.key(p, n)], col = state[fi];
+          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, idx: fi, sel: selected === fi, face: C.stickers[fi].face, hl: highlight === C.stickers[fi].face, px: scale });
         }
       }
     }
     polys.sort(function (u, v) { return v.d - u.d; });
-    this.polys = polys;
     ctx.lineJoin = 'round';
     for (i = 0; i < polys.length; i++) {
       var pl = polys[i], pts = pl.pts;
@@ -133,6 +131,10 @@
         if (pl.hl) { ctx.strokeStyle = ACCENT; ctx.lineWidth = Math.max(2, pl.px * 0.07); ctx.stroke(); }
       }
     }
+    return polys;
+  }
+  P.draw = function () {
+    this.polys = paintCube(this.ctx, this.W, this.H, this.dpr, this.state, this.yaw, this.pitch, this.anim, this.highlight, this.selected);
   };
 
   // ---- Bedienung ----
@@ -188,7 +190,7 @@
       var k = w[0] ? 0 : w[1] ? 1 : 2, sig = w[k];
       d.mode = 'layer'; d.k = k; d.sig = sig; d.c = d.hit.p[k]; d.dir = [best.sx * (best.pr >= 0 ? 1 : -1), best.sy * (best.pr >= 0 ? 1 : -1)];
       d.px = Math.min(this.W, this.H) / 5.3 * 1.7;
-      this.anim = { k: d.k, c: d.c, angle: 0, live: true, user: true, to: 0, from: 0 };
+      this.anim = { k: d.k, cs: [d.c], angle: 0, live: true, user: true, to: 0, from: 0 };
     }
     if (d.mode === 'layer') {
       var proj = tx * d.dir[0] + ty * d.dir[1];
@@ -225,5 +227,5 @@
       if (f === hlFace) { ctx.strokeStyle = ACCENT; ctx.lineWidth = 3; ctx.strokeRect(bx - 1, by - 1, 3 * cell + 2, 3 * cell + 2); }
     }
   }
-  root.CubeView = CubeView; root.drawNet = drawNet; root.PALETTE = PALETTE;
+  root.paintCube = paintCube; root.CubeView = CubeView; root.drawNet = drawNet; root.PALETTE = PALETTE;
 })(window);

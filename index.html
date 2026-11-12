@@ -81,11 +81,21 @@
   </section>
   <!-- Lektionen -->
   <section id="screen-lessons" class="screen">
-    <div id="lessonList"></div>
+    <div id="lessonListWrap">
+      <div class="seg" id="lessonTabs"></div>
+      <div id="lessonList"></div>
+    </div>
     <div id="lessonDetail" hidden>
-      <div class="row"><button id="lBack">← Alle Lektionen</button></div>
+      <div class="row"><button id="lBack">← Zurück</button></div>
       <h2 id="lTitle"></h2>
+      <div id="lGroup" class="lGroup"></div>
       <p id="lDesc" class="lDesc"></p>
+      <div class="baRow">
+        <div><canvas id="lBefore" class="thumb"></canvas><span>Vorher</span></div>
+        <div class="bigArrow">➜</div>
+        <div><canvas id="lAfter" class="thumb"></canvas><span>Nachher</span></div>
+      </div>
+      <div class="notation" id="lNotation"></div>
       <div class="stage big"><canvas id="lesson3d"></canvas></div>
       <div class="algMoves big" id="lMoves"></div>
       <div class="row ctrl">
@@ -99,16 +109,30 @@
         <select id="selSpeedLesson" aria-label="Geschwindigkeit"></select></div>
     </div>
   </section>
+
+  <!-- Design -->
+  <section id="screen-settings" class="screen">
+    <h2>Darstellung</h2>
+    <div class="seg" id="themeSeg">
+      <button data-t="auto">Automatisch</button><button data-t="light">Hell</button><button data-t="dark">Dunkel</button>
+    </div>
+    <h2>Akzentfarbe</h2>
+    <p class="lDesc">Tippe oder ziehe auf dem Farbring, um die Akzentfarbe zu wählen.</p>
+    <div class="ringWrap"><canvas id="ring"></canvas><div id="ringPrev"></div></div>
+    <button id="accReset" class="wide">Standard-Rot</button>
+  </section>
 </main>
 <nav>
   <button id="tab-cube" class="active">🧊 Würfel</button>
   <button id="tab-solve">🧩 Lösen</button>
   <button id="tab-lessons">🎓 Lektionen</button>
+  <button id="tab-settings">🎨 Design</button>
 </nav>
 <div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide">OK</button></div></div>
 <script src="cube.js"></script>
 <script src="solver.js"></script>
 <script src="lessons.js"></script>
+<script src="thumbs.js"></script>
 <script src="render.js"></script>
 <script src="app.js"></script>
 </body>

@@ -55,32 +55,59 @@
     return src;
   }
   var FACE_AXIS = { U: [1, 1], D: [1, -1], R: [0, 1], L: [0, -1], F: [2, 1], B: [2, -1] };
-  // "R", "R'", "R2" -> {k,c,steps (−2..2), name}
+  // Beliebiger Zug: Außenseiten (R), Doppelschichten (r), Mittelschichten (M E S), Würfeldrehungen (x y z)
+  // -> {k, cs (Schichten), c (erste Schicht), steps (-1..2, Viertelumdrehungen um +e_k), name}
   function moveToLayer(name) {
-    var ax = FACE_AXIS[name[0]];
-    var amt = name.length === 1 ? 1 : (name[1] === '2' ? 2 : 3);
-    var steps = (((-ax[1] * amt) % 4) + 4) % 4;
+    var t = name.replace(/[()]/g, ''), base = t[0], suf = t.slice(1);
+    var amt = suf.indexOf('2') >= 0 ? 2 : (suf.indexOf("'") >= 0 ? 3 : 1), k, cs, dir, up = base.toUpperCase();
+    if (FACE_AXIS[base]) { k = FACE_AXIS[base][0]; cs = [FACE_AXIS[base][1]]; dir = -FACE_AXIS[base][1]; }
+    else if (FACE_AXIS[up] && base !== up) { k = FACE_AXIS[up][0]; cs = [0, FACE_AXIS[up][1]]; dir = -FACE_AXIS[up][1]; }
+    else if (base === 'M') { k = 0; cs = [0]; dir = 1; }
+    else if (base === 'E') { k = 1; cs = [0]; dir = 1; }
+    else if (base === 'S') { k = 2; cs = [0]; dir = -1; }
+    else if (base === 'x') { k = 0; cs = [-1, 0, 1]; dir = -1; }
+    else if (base === 'y') { k = 1; cs = [-1, 0, 1]; dir = -1; }
+    else if (base === 'z') { k = 2; cs = [-1, 0, 1]; dir = -1; }
+    else throw new Error('Unbekannter Zug: ' + name);
+    var steps = (((dir * amt) % 4) + 4) % 4;
     if (steps === 3) steps = -1;
-    return { k: ax[0], c: ax[1], steps: steps, name: name };
+    return { k: k, cs: cs, c: cs[0], steps: steps, name: t };
   }
   var MOVE_NAMES = [];
   FACE_NAMES.forEach(function (fn) { MOVE_NAMES.push(fn, fn + "'", fn + '2'); });
+  var permMoveCache = {};
+  function multiPerm(k, cs, steps) {
+    var p = new Uint8Array(54); for (var i = 0; i < 54; i++) p[i] = i;
+    cs.forEach(function (c) { p = applyPermRaw(p, layerPerm(k, c, steps)); });
+    return p;
+  }
+  function applyPermRaw(state, perm) { var out = new Uint8Array(54); for (var i = 0; i < 54; i++) out[i] = state[perm[i]]; return out; }
+  function permOfMove(name) {
+    var t = name.replace(/[()]/g, '');
+    if (!permMoveCache[t]) { var l = moveToLayer(t); permMoveCache[t] = multiPerm(l.k, l.cs, l.steps); }
+    return permMoveCache[t];
+  }
   var MOVE_PERMS = {};
-  MOVE_NAMES.forEach(function (m) { var l = moveToLayer(m); MOVE_PERMS[m] = layerPerm(l.k, l.c, l.steps); });
+  MOVE_NAMES.forEach(function (m) { MOVE_PERMS[m] = permOfMove(m); });
 
   function applyPerm(state, perm) {
     var out = new Uint8Array(54);
     for (var i = 0; i < 54; i++) out[i] = state[perm[i]];
     return out;
   }
-  function applyMove(state, m) { return applyPerm(state, MOVE_PERMS[m]); }
+  function applyMove(state, m) { return applyPerm(state, permOfMove(m)); }
   function applyMoves(state, moves) {
     for (var i = 0; i < moves.length; i++) state = applyMove(state, moves[i]);
     return state;
   }
   function invertMove(m) { return m.length === 1 ? m + "'" : (m[1] === '2' ? m : m[0]); }
   function invertMoves(ms) { return ms.slice().reverse().map(invertMove); }
-  function parseAlg(s) { return s.trim().split(/\s+/).filter(Boolean); }
+  function parseAlg(s) {
+    return s.replace(/[()]/g, ' ').trim().split(/\s+/).filter(Boolean).map(function (t) {
+      return t.indexOf('2') >= 0 ? t[0] + '2' : t;
+    });
+  }
+  function faceOfMove(m) { return FACE_NAMES.indexOf(m[0].toUpperCase()); }
   function solvedColors() {
     var a = new Uint8Array(54);
     for (var i = 0; i < 54; i++) a[i] = SCHEME[stickers[i].face];
@@ -107,7 +134,7 @@
   var api = {
     FACE_NAMES: FACE_NAMES, FACE_NORMALS: FACE_NORMALS, SCHEME: SCHEME, COLOR_NAMES: COLOR_NAMES,
     stickers: stickers, indexMap: indexMap, key: key, rotVec: rotVec, layerPerm: layerPerm,
-    moveToLayer: moveToLayer, MOVE_NAMES: MOVE_NAMES, MOVE_PERMS: MOVE_PERMS,
+    moveToLayer: moveToLayer, multiPerm: multiPerm, permOfMove: permOfMove, faceOfMove: faceOfMove, MOVE_NAMES: MOVE_NAMES, MOVE_PERMS: MOVE_PERMS,
     applyPerm: applyPerm, applyMove: applyMove, applyMoves: applyMoves, invertMove: invertMove,
     invertMoves: invertMoves, parseAlg: parseAlg, solvedColors: solvedColors, isSolved: isSolved, simplify: simplify
   };
