@@ -53,7 +53,7 @@
   // ---------- Tabs ----------
   var cubeView, previewView, solveView, lessonView;
   function showTab(name) {
-    ['cube', 'solve', 'lessons'].forEach(function (n) {
+    ['cube', 'solve', 'lessons', 'settings'].forEach(function (n) {
       $('screen-' + n).classList.toggle('active', n === name);
       $('tab-' + n).classList.toggle('active', n === name);
     });
@@ -61,7 +61,8 @@
   }
   $('tab-cube').onclick = function () { showTab('cube'); };
   $('tab-solve').onclick = function () { showTab('solve'); };
-  $('tab-lessons').onclick = function () { showTab('lessons'); };
+  $('tab-lessons').onclick = function () { showTab('lessons'); if (!lOpen) renderLessonList(); };
+  $('tab-settings').onclick = function () { showTab('settings'); drawRing(); };
 
   // ---------- Funktion 1: freier 3D-Würfel ----------
   var undoStack = [], moves = 0;
@@ -286,42 +287,74 @@
   });
 
   // ---------- Lektionen ----------
+  var LL = LessonLib, curSec = 'basic', lMoves = [], lStates = [], lIdx = 0, lAuto = false, lOpen = false, lCur = null;
   lessonView = new CubeView($('lesson3d'), { layerDrag: false });
-  ;[['selSpeedLesson']].forEach(function (a) {
-    SPEEDS.forEach(function (sp) { var o = document.createElement('option'); o.value = sp[1]; o.textContent = 'Tempo: ' + sp[0]; if (sp[1] === 700) o.selected = true; $(a[0]).appendChild(o); });
-  });
-  (function buildList() {
-    var box = $('lessonList'), h = '';
-    LessonLib.LESSONS.forEach(function (cat, ci) {
-      h += '<div class="cat">' + cat.cat + '</div>';
-      cat.items.forEach(function (it, ii) {
-        h += '<button class="lcard" data-c="' + ci + '" data-i="' + ii + '">' + it.name + '<small>' + it.alg + '</small></button>';
-      });
+  SPEEDS.forEach(function (sp) { var o = document.createElement('option'); o.value = sp[1]; o.textContent = 'Tempo: ' + sp[0]; if (sp[1] === 700) o.selected = true; $('selSpeedLesson').appendChild(o); });
+  function secById(id) { return LL.SECTIONS.filter(function (x) { return x.id === id; })[0]; }
+  function cardHint(sec, it) {
+    var a = LL.analyze(it);
+    if (sec.id === 'oll') return 'Oben ' + a.yBefore + '/9 gelb → 9/9';
+    if (sec.id === 'pll') return LL.summary(sec, it).replace(' Die Oberseite bleibt gelb.', '');
+    if (sec.id === 'f2l') return 'Paar einsetzen';
+    return it.desc ? it.desc.split('. ')[0].replace(/\.$/, '') : '';
+  }
+  function drawThumb(cv, sec, it) {
+    var a = LL.analyze(it);
+    if (sec.kind === 'oll') Thumbs.top(cv, a.full, 'oll');
+    else if (sec.kind === 'pll') Thumbs.top(cv, a.full, 'pll', a.arrows);
+    else Thumbs.iso(cv, a.start);
+  }
+  function renderLessonList() {
+    var tabs = $('lessonTabs'); tabs.innerHTML = '';
+    LL.SECTIONS.forEach(function (sec) {
+      var b = document.createElement('button'); b.textContent = sec.name; if (sec.id === curSec) b.className = 'on';
+      b.onclick = function () { curSec = sec.id; renderLessonList(); document.querySelector('main').scrollTop = 0; };
+      tabs.appendChild(b);
     });
-    box.innerHTML = h;
+    var sec = secById(curSec), h = '';
+    sec.groups.forEach(function (g, gi) {
+      h += '<div class="cat">' + g.name + '</div><div class="lgrid">';
+      g.items.forEach(function (it, ii) {
+        if (!LL.validFor(sec, it)) return;
+        h += '<button class="lcard" data-g="' + gi + '" data-i="' + ii + '"><canvas class="thumb"></canvas><b>' + it.name + '</b><span class="hint">' + cardHint(sec, it) + '</span><small>' + it.alg + '</small></button>';
+      });
+      h += '</div>';
+    });
+    var box = $('lessonList'); box.innerHTML = h;
     box.onclick = function (e) {
       var b = e.target.closest ? e.target.closest('.lcard') : null; if (!b) return;
-      openLesson(LessonLib.LESSONS[+b.dataset.c].items[+b.dataset.i]);
+      openLesson(sec, sec.groups[+b.dataset.g], sec.groups[+b.dataset.g].items[+b.dataset.i]);
     };
-  })();
-  var lMoves = [], lStates = [], lIdx = 0, lAuto = false, lOpen = false;
-  function openLesson(it) {
-    var b = LessonLib.build(it.alg); lMoves = b.moves; lStates = [b.state];
+    setTimeout(function () {
+      box.querySelectorAll('.lcard').forEach(function (b) {
+        drawThumb(b.querySelector('canvas'), sec, sec.groups[+b.dataset.g].items[+b.dataset.i]);
+      });
+    }, 20);
+  }
+  function openLesson(sec, grp, it) {
+    var a = LL.analyze(it); lCur = { sec: sec, it: it }; lMoves = a.moves; lStates = [a.start];
     lMoves.forEach(function (m, i) { lStates.push(C.applyMove(lStates[i], m)); });
     lIdx = 0; lAuto = false; $('lAuto').textContent = '▶ Auto';
-    $('lTitle').textContent = it.name; $('lDesc').textContent = it.desc;
-    $('lessonList').hidden = true; $('lessonDetail').hidden = false;
+    $('lTitle').textContent = it.name; $('lGroup').textContent = sec.name + ' · ' + grp.name;
+    $('lDesc').textContent = LL.summary(sec, it);
+    $('lNotation').textContent = it.alg;
+    $('lessonListWrap').hidden = true; $('lessonDetail').hidden = false;
     if (!lOpen) { lOpen = true; pushBack('lesson', hideLesson); }
     document.querySelector('main').scrollTop = 0;
-    setTimeout(function () { lessonView.resize(); lessonView.clearQueue(); lessonView.anim = null; lessonView.setState(lStates[0]); renderLesson(); }, 30);
+    setTimeout(function () {
+      lessonView.resize(); lessonView.clearQueue(); lessonView.anim = null; lessonView.setState(lStates[0]); renderLesson();
+      if (sec.kind === 'oll') { Thumbs.top($('lBefore'), a.full, 'oll'); Thumbs.top($('lAfter'), C.solvedColors(), 'oll'); }
+      else if (sec.kind === 'pll') { Thumbs.top($('lBefore'), a.full, 'pll', a.arrows); Thumbs.top($('lAfter'), C.solvedColors(), 'pll'); }
+      else { Thumbs.iso($('lBefore'), a.start); Thumbs.iso($('lAfter'), a.after); }
+    }, 30);
   }
-  function hideLesson() { lAuto = false; lOpen = false; lessonView.clearQueue(); lessonView.anim = null; $('lessonDetail').hidden = true; $('lessonList').hidden = false; }
+  function hideLesson() { lAuto = false; lOpen = false; lessonView.clearQueue(); lessonView.anim = null; $('lessonDetail').hidden = true; $('lessonListWrap').hidden = false; renderLessonList(); }
   function closeLesson() { if (lOpen) { hideLesson(); popBack('lesson'); } }
   $('lBack').onclick = closeLesson;
   function renderLesson() {
     $('lMoves').innerHTML = lMoves.map(function (m, j) { return '<span class="' + (j < lIdx ? 'done' : j === lIdx ? 'cur' : '') + '">' + m + '</span>'; }).join('');
-    $('lInfo').textContent = lIdx >= lMoves.length ? 'Fertig – die beteiligten Steine sind wieder an ihrem Platz.' : 'Zug ' + (lIdx + 1) + ' von ' + lMoves.length;
-    lessonView.highlight = lIdx < lMoves.length ? FACE_IDX[lMoves[lIdx][0]] : -1;
+    $('lInfo').textContent = lIdx >= lMoves.length ? 'Fertig – die beteiligten Steine sind an ihrem Platz.' : 'Zug ' + (lIdx + 1) + ' von ' + lMoves.length;
+    lessonView.highlight = lIdx < lMoves.length ? C.faceOfMove(lMoves[lIdx]) : -1;
   }
   function lDur() { return parseInt($('selSpeedLesson').value, 10); }
   function lNext(cb) {
@@ -343,6 +376,67 @@
     lAuto = true; this.textContent = '⏸ Pause';
     (function step() { if (!lAuto) return; lNext(function () { setTimeout(step, 150); }); })();
   };
+
+  // ---------- Design: Darkmode + Akzentfarbe ----------
+  var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  var theme = store.get('zauber.theme') || 'auto', hue = parseFloat(store.get('zauber.hue'));
+  if (isNaN(hue)) hue = 0;
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function isDark() { return theme === 'dark' || (theme === 'auto' && mq && mq.matches); }
+  function hsl2hex(h, s, l) {
+    s /= 100; l /= 100; var k = function (n) { return (n + h / 30) % 12; }, a = s * Math.min(l, 1 - l);
+    var f = function (n) { var v = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return ('0' + Math.round(v * 255).toString(16)).slice(-2); };
+    return '#' + f(0) + f(8) + f(4);
+  }
+  function applyDesign() {
+    var dark = isDark(), root = document.documentElement, col = hsl2hex(hue, 72, dark ? 58 : 46);
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.style.setProperty('--accent', col);
+    var r = parseInt(col.substr(1, 2), 16), g = parseInt(col.substr(3, 2), 16), b = parseInt(col.substr(5, 2), 16);
+    root.style.setProperty('--on-accent', (0.299 * r + 0.587 * g + 0.114 * b) > 165 ? '#111' : '#fff');
+    if (window.setCubeAccent) setCubeAccent(col);
+    var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', dark ? '#1a1b1e' : '#2b2d31');
+    Array.prototype.forEach.call($('themeSeg').children, function (b2) { b2.className = b2.dataset.t === theme ? 'on' : ''; });
+    $('ringPrev').style.background = col;
+    drawRing();
+    if (!$('screen-lessons').classList.contains('active')) return;
+    if (lOpen && lCur) { openLessonRedraw(); } else renderLessonList();
+  }
+  function openLessonRedraw() {
+    var a = LL.analyze(lCur.it), sec = lCur.sec;
+    if (sec.kind === 'pll') Thumbs.top($('lBefore'), a.full, 'pll', a.arrows);
+  }
+  Array.prototype.forEach.call($('themeSeg').children, function (b) {
+    b.onclick = function () { theme = b.dataset.t; store.set('zauber.theme', theme); applyDesign(); };
+  });
+  if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (theme === 'auto') applyDesign(); });
+  $('accReset').onclick = function () { hue = 0; store.set('zauber.hue', '0'); applyDesign(); };
+  var ring = $('ring');
+  function drawRing() {
+    var r = ring.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    if (ring.width !== Math.round(r.width * d)) { ring.width = Math.round(r.width * d); ring.height = Math.round(r.height * d); }
+    var ctx = ring.getContext('2d'), W = r.width, cx = W / 2, rad = W * 0.43, th = W * 0.17;
+    ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, W); ctx.lineWidth = th + 1;
+    for (var a = 0; a < 360; a += 1) {
+      ctx.strokeStyle = 'hsl(' + a + ',75%,52%)'; ctx.beginPath();
+      ctx.arc(cx, cx, rad, (a - 90.6) * Math.PI / 180, (a - 89.4) * Math.PI / 180); ctx.stroke();
+    }
+    var ang = (hue - 90) * Math.PI / 180, mx = cx + Math.cos(ang) * rad, my = cx + Math.sin(ang) * rad;
+    ctx.beginPath(); ctx.arc(mx, my, th * 0.62, 0, Math.PI * 2); ctx.fillStyle = hsl2hex(hue, 75, 52); ctx.fill();
+    ctx.lineWidth = 3.5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.arc(mx, my, th * 0.62 + 2, 0, Math.PI * 2); ctx.stroke();
+  }
+  var ringDrag = false;
+  function ringPick(e) {
+    var r = ring.getBoundingClientRect(), x = e.clientX - r.left - r.width / 2, y = e.clientY - r.top - r.height / 2;
+    hue = (Math.atan2(y, x) * 180 / Math.PI + 90 + 360) % 360; store.set('zauber.hue', String(Math.round(hue)));
+    applyDesign();
+  }
+  ring.addEventListener('pointerdown', function (e) { ringDrag = true; ring.setPointerCapture(e.pointerId); ringPick(e); });
+  ring.addEventListener('pointermove', function (e) { if (ringDrag) ringPick(e); });
+  ring.addEventListener('pointerup', function () { ringDrag = false; });
+  ring.addEventListener('pointercancel', function () { ringDrag = false; });
+  applyDesign();
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {});
 })();
