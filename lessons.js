@@ -10,7 +10,7 @@
   var SECTIONS = [
     { id: 'basic', name: 'Anfänger', kind: 'iso', groups: [
       { name: 'Erste Schicht', items: [
-        L('Trigger', TRIG, 'Der wichtigste Baustein („Sexy Move“). Er holt Ecken heraus oder setzt sie ein. Sechsmal ausgeführt ergibt er wieder den Ausgangszustand.'),
+        L('Trigger', TRIG, 'Der wichtigste Baustein der Anfängermethode. Er holt Ecken heraus oder setzt sie ein. Sechsmal ausgeführt ergibt er wieder den Ausgangszustand.'),
         L('Ecke einsetzen – Weiß zeigt nach rechts', rep(TRIG, 1), 'Die Ecke steht oben rechts vorne, ihr weißer Aufkleber zeigt nach rechts: Trigger einmal.'),
         L('Ecke einsetzen – Weiß zeigt nach oben', rep(TRIG, 3), 'Die Ecke steht oben rechts vorne, ihr weißer Aufkleber zeigt nach oben: Trigger dreimal.'),
         L('Ecke einsetzen – Weiß zeigt nach vorne', rep(TRIG, 5), 'Die Ecke steht oben rechts vorne, ihr weißer Aufkleber zeigt nach vorne: Trigger fünfmal.')
