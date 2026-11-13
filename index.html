@@ -20,18 +20,20 @@
       <div class="overlay" id="cubeStatus">Züge: 0</div>
     </div>
     <div id="autoBar" class="row" hidden>
-      <button id="aPause" class="primary">⏸ Pause</button>
-      <button id="aStop">■ Stopp</button>
+      <button id="aPause" class="primary">Pause</button>
+      <button id="aStop">Stopp</button>
       <select id="selSpeedCube" aria-label="Geschwindigkeit"></select>
     </div>
-    <div class="row">
-      <button id="btnScramble">🔀 Mischen</button>
-      <button id="btnUndo">↶ Zurück</button>
-      <button id="btnReset">⟲ Neu</button>
+    <div class="seg" id="modeSeg">
+      <button data-m="free" class="on">Frei</button>
+      <button data-m="view">Nur Ansicht</button>
+      <button data-m="layer">Nur Ebenen</button>
     </div>
     <div class="row">
-      <button id="btnViewMode" class="toggle">👁 Ansicht drehen</button>
-      <button id="btnAutoSolve" class="primary">✨ Lösen</button>
+      <button id="btnScramble">Mischen</button>
+      <button id="btnUndo">Zurück</button>
+      <button id="btnReset">Neu</button>
+      <button id="btnAutoSolve" class="primary">Lösen</button>
     </div>
   </section>
 
@@ -48,92 +50,81 @@
         <button class="infoBtn" data-info="input" aria-label="Hinweise">i</button>
         <button id="btnClear">Leeren</button>
         <button id="btnFromCube">Vom 3D-Würfel</button>
+        <button id="btnCompute" class="primary">Lösung berechnen</button>
       </div>
-      <button id="btnCompute" class="primary wide">Lösung berechnen</button>
     </div>
 
-    <div id="solvePane" hidden>
-      <div class="phase"><div id="phaseTitle"></div><div id="phaseDesc"></div></div>
-      <div class="stage big">
+    <div id="solvePane" class="pane" hidden>
+      <div class="topRow"><div id="phaseTitle"></div><button class="infoBtn" id="btnPhaseInfo" aria-label="Hinweise">i</button></div>
+      <div class="stage grow">
         <canvas id="solve3d"></canvas>
-        <button class="info" data-info="solve" aria-label="Hinweise">i</button>
+        <canvas id="netMini" class="netOv"></canvas>
       </div>
-      <canvas id="netMini" class="netMini"></canvas>
-      <div class="move" id="moveBig">–</div>
-      <div class="moveDesc" id="moveDesc"></div>
-      <details id="algBox" class="algBox"><summary>Algorithmus anzeigen</summary>
-        <div id="algName" class="algName"></div><div id="algMoves" class="algMoves"></div><div id="algText" class="algText"></div>
-      </details>
-      <div class="row ctrl">
-        <button id="bStart">⏮</button>
-        <button id="bBack">◀</button>
-        <button id="bAuto" class="primary">▶ Auto</button>
-        <button id="bNext">▶ Weiter</button>
-      </div>
-      <div class="status" id="stepInfo"></div>
-      <div class="chips" id="chips"></div>
-      <div class="row">
-        <label class="check"><input type="checkbox" id="chkFollow"> Ansicht folgt dem Zug</label>
+      <div class="moveRow">
+        <div class="move" id="moveBig">-</div>
+        <div class="moveCol"><div class="moveDesc" id="moveDesc"></div><div class="status" id="stepInfo"></div></div>
         <select id="selSpeed" aria-label="Geschwindigkeit"></select>
       </div>
-      <div class="row"><button id="btnRecipe">📖 Rezept</button><button id="btnBackInput">✎ Neu eingeben</button></div>
+      <div class="row ctrl">
+        <button id="bStart">Anfang</button>
+        <button id="bBack">Zurück</button>
+        <button id="bAuto" class="primary">Auto</button>
+        <button id="bNext">Weiter</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="row">
+        <button id="btnFollow" class="toggle">Folgen</button>
+        <button id="btnAlg">Algorithmus</button>
+        <button id="btnRecipe">Rezept</button>
+        <button id="btnBackInput">Neu</button>
+      </div>
     </div>
   </section>
+
   <!-- Lektionen -->
   <section id="screen-lessons" class="screen">
     <div id="lessonListWrap">
       <div class="seg" id="lessonTabs"></div>
       <div id="lessonList"></div>
     </div>
-    <div id="lessonDetail" hidden>
-      <div class="row"><button id="lBack">← Zurück</button></div>
-      <h2 id="lTitle"></h2>
-      <div id="lGroup" class="lGroup"></div>
-      <p id="lDesc" class="lDesc"></p>
-      <div class="baRow">
-        <div><canvas id="lBefore" class="thumb"></canvas><span>Vorher</span></div>
-        <div class="bigArrow">➜</div>
-        <div><canvas id="lAfter" class="thumb"></canvas><span>Nachher</span></div>
+    <div id="lessonDetail" class="pane" hidden>
+      <div class="topRow"><button id="lBack">Zurück</button><div id="lTitle" class="ltitle"></div><button class="infoBtn" id="btnLInfo" aria-label="Hinweise">i</button></div>
+      <div class="stage grow">
+        <canvas id="lesson3d"></canvas>
+        <div class="ovThumb left"><canvas id="lBefore" class="thumb"></canvas><span>Vorher</span></div>
+        <div class="ovThumb right"><canvas id="lAfter" class="thumb"></canvas><span>Nachher</span></div>
       </div>
-      <div class="notation" id="lNotation"></div>
-      <div class="stage big"><canvas id="lesson3d"></canvas></div>
-      <div class="algMoves big" id="lMoves"></div>
+      <div class="chips" id="lMoves"></div>
       <div class="row ctrl">
-        <button id="lStart">⏮</button>
-        <button id="lBackStep">◀</button>
-        <button id="lAuto" class="primary">▶ Auto</button>
-        <button id="lNext">▶ Weiter</button>
+        <button id="lStart">Anfang</button>
+        <button id="lBackStep">Zurück</button>
+        <button id="lAuto" class="primary">Auto</button>
+        <button id="lNext">Weiter</button>
       </div>
-      <div class="status" id="lInfo"></div>
-      <div class="row"><span class="legendTxt">Farbig = beteiligte Steine, grau = bleiben egal. Rote Umrandung = Seite, die gedreht wird.</span>
-        <select id="selSpeedLesson" aria-label="Geschwindigkeit"></select></div>
+      <div class="row"><div class="status grow" id="lInfo"></div><select id="selSpeedLesson" aria-label="Geschwindigkeit"></select></div>
     </div>
   </section>
 
   <!-- Design -->
   <section id="screen-settings" class="screen">
-    <h2>Darstellung</h2>
-    <div class="seg" id="themeSeg">
-      <button data-t="auto">Automatisch</button><button data-t="light">Hell</button><button data-t="dark">Dunkel</button>
-    </div>
-    <h2>Akzentfarbe</h2>
-    <p class="lDesc">Tippe oder ziehe auf dem Farbring, um die Akzentfarbe zu wählen.</p>
-    <div class="ringWrap"><canvas id="ring"></canvas><div id="ringPrev"></div></div>
+    <div class="row"><button id="themeBtn" class="themeBtn"></button></div>
+    <div class="subtitle">Akzentfarbe</div>
+    <div class="ringWrap"><canvas id="ring"></canvas><button id="ringOk">Fertig</button></div>
     <button id="accReset" class="wide">Standard-Rot</button>
   </section>
 </main>
 <nav>
-  <button id="tab-cube" class="active">🧊 Würfel</button>
-  <button id="tab-solve">🧩 Lösen</button>
-  <button id="tab-lessons">🎓 Lektionen</button>
-  <button id="tab-settings">🎨 Design</button>
+  <button id="tab-cube" class="active">Würfel</button>
+  <button id="tab-solve">Lösen</button>
+  <button id="tab-lessons">Lektionen</button>
+  <button id="tab-settings">Design</button>
 </nav>
 <div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide">OK</button></div></div>
 <script src="cube.js"></script>
 <script src="solver.js"></script>
 <script src="lessons.js"></script>
-<script src="thumbs.js"></script>
 <script src="render.js"></script>
+<script src="thumbs.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

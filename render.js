@@ -5,7 +5,7 @@
   var PALETTE = ['#ffffff', '#ffd500', '#c8102e', '#ff7f11', '#009b48', '#0a4fb4'];
   var GRAY = '#9a9ca3', BODY = '#1c1c1f', ACCENT = '#d62828';
   root.setCubeAccent = function (c) { ACCENT = c; };
-  var H = 0.485, SH = 0.4, CAM = 9;
+  var H = 0.485, SH = 0.425, CAM = 9;
   var VIEWS = [ // Ansicht je Fläche U R F D L B (yaw, pitch)
     [-0.5, 0.8], [-1.05, 0.35], [-0.45, 0.35], [-0.5, -0.7], [1.05, 0.35], [2.7, 0.35]
   ];
@@ -15,7 +15,7 @@
     this.canvas = canvas; this.ctx = canvas.getContext('2d');
     this.state = C.solvedColors();
     this.yaw = -0.55; this.pitch = 0.5; this.target = null;
-    this.layerDrag = opts.layerDrag !== false; this.viewMode = false;
+    this.layerDrag = opts.layerDrag !== false; this.mode = 'free'; // free | view | layer
     this.queue = []; this.anim = null; this.highlight = -1;
     this.onTurn = opts.onTurn || null; this.onTap = opts.onTap || null; this.selected = -1; this.polys = []; this.drag = null; this.busy = false;
     var self = this;
@@ -126,7 +126,7 @@
       ctx.closePath();
       if (pl.body) { ctx.fillStyle = BODY; ctx.fill(); ctx.strokeStyle = BODY; ctx.lineWidth = 1; ctx.stroke(); }
       else {
-        ctx.fillStyle = pl.c; ctx.strokeStyle = pl.c; ctx.lineWidth = pl.px * 0.1; ctx.fill(); ctx.stroke();
+        ctx.fillStyle = pl.c; ctx.strokeStyle = pl.c; ctx.lineWidth = pl.px * 0.04; ctx.fill(); ctx.stroke();
         if (pl.sel) { ctx.strokeStyle = ACCENT; ctx.lineWidth = Math.max(3, pl.px * 0.12); ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.5, pl.px * 0.04); ctx.stroke(); }
         if (pl.hl) { ctx.strokeStyle = ACCENT; ctx.lineWidth = Math.max(2, pl.px * 0.07); ctx.stroke(); }
       }
@@ -161,15 +161,16 @@
   P.down = function (e) {
     if (this.drag) return; // zweiter Finger wird ignoriert
     if (this.anim && this.anim.live) return;
-    var xy = this.localXY(e), hit = (this.layerDrag && !this.viewMode && !this.isBusy()) ? this.hitTest(xy[0], xy[1]) : null;
+    var xy = this.localXY(e), hit = (this.layerDrag && this.mode !== 'view' && !this.isBusy()) ? this.hitTest(xy[0], xy[1]) : null;
     this.canvas.setPointerCapture(e.pointerId);
     this.target = null;
-    this.drag = { id: e.pointerId, x0: xy[0], y0: xy[1], x: xy[0], y: xy[1], hit: hit, maxMove: 0, tapHit: this.onTap ? this.hitTest(xy[0], xy[1]) : null, mode: hit ? 'pending' : 'view' };
+    this.drag = { id: e.pointerId, x0: xy[0], y0: xy[1], x: xy[0], y: xy[1], hit: hit, maxMove: 0, tapHit: this.onTap ? this.hitTest(xy[0], xy[1]) : null, mode: hit ? 'pending' : (this.mode === 'layer' && this.layerDrag ? 'none' : 'view') };
   };
   P.move = function (e) {
     var d = this.drag; if (!d || e.pointerId !== d.id) return;
     var xy = this.localXY(e), dx = xy[0] - d.x, dy = xy[1] - d.y; d.x = xy[0]; d.y = xy[1];
     d.maxMove = Math.max(d.maxMove, Math.hypot(xy[0] - d.x0, xy[1] - d.y0));
+    if (d.mode === 'none') return;
     if (d.mode === 'view') {
       this.yaw += dx * 0.01; this.pitch = Math.max(-1.4, Math.min(1.4, this.pitch + dy * 0.01)); return;
     }
@@ -184,7 +185,7 @@
         var pr = (tx * sx + ty * sy) / len;
         if (!best || Math.abs(pr) > Math.abs(best.pr)) best = { ta: ta, pr: pr, sx: sx / len, sy: sy / len };
       }
-      if (!best) { d.mode = 'view'; return; }
+      if (!best) { d.mode = this.mode === 'layer' ? 'none' : 'view'; return; }
       var tv = [0, 0, 0]; tv[best.ta] = best.pr >= 0 ? 1 : -1;
       var w = [n[1] * tv[2] - n[2] * tv[1], n[2] * tv[0] - n[0] * tv[2], n[0] * tv[1] - n[1] * tv[0]];
       var k = w[0] ? 0 : w[1] ? 1 : 2, sig = w[k];
