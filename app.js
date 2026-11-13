@@ -10,6 +10,18 @@
     });
   });
 
+  var IC = {
+    start: '<svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="M17 6l-7 6 7 6"/></svg>',
+    back: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+    next: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
+    play: '<svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24"><path class="f" d="M7 5h3.6v14H7zM13.4 5H17v14h-3.4z"/></svg>'
+  };
+  function setIcon(id, k) { $(id).innerHTML = IC[k]; }
+  function setAutoIcon(id, playing) { setIcon(id, playing ? 'pause' : 'play'); }
+  setIcon('bStart', 'start'); setIcon('bBack', 'back'); setIcon('bNext', 'next'); setAutoIcon('bAuto', false);
+  setIcon('lStart', 'start'); setIcon('lBackStep', 'back'); setIcon('lNext', 'next'); setAutoIcon('lAuto', false);
+
   var LEGEND = '<p><b>U</b> = Oben, <b>D</b> = Unten, <b>L</b> = Links, <b>R</b> = Rechts, <b>F</b> = Vorne, <b>B</b> = Hinten.</p>' +
     '<p>Ohne Zusatz: diese Seite eine Viertelumdrehung im Uhrzeigersinn drehen (mit Blick direkt auf die Seite). <b>\'</b> = gegen den Uhrzeigersinn. <b>2</b> = halbe Umdrehung.</p>' +
     '<p>Kleine Buchstaben (r, l, u, d, f, b) drehen zwei Schichten zugleich, M, E und S die mittlere Schicht, x, y und z den ganzen Würfel.</p>';
@@ -187,7 +199,7 @@
       });
     });
     flat.forEach(function (st, i) { states.push(C.applyMove(states[i], st.m)); });
-    idx = 0; auto = false; $('bAuto').textContent = 'Auto';
+    idx = 0; auto = false; setAutoIcon('bAuto', false);
     $('inputPane').hidden = true; $('solvePane').hidden = false;
     var ch = $('chips'); ch.innerHTML = '';
     flat.forEach(function (st, i) {
@@ -227,7 +239,7 @@
   }
   function dur() { return parseInt($('selSpeed').value, 10); }
   function next(cb) {
-    if (solveView.isBusy() || idx >= flat.length) { auto = false; $('bAuto').textContent = 'Auto'; return; }
+    if (solveView.isBusy() || idx >= flat.length) { auto = false; setAutoIcon('bAuto', false); return; }
     var m = flat[idx].m; idx++; solveView.highlight = -1;
     solveView.enqueueName(m, dur(), function () { renderStep(); if (cb) cb(); });
   }
@@ -236,16 +248,16 @@
     idx--; solveView.highlight = -1; solveView.enqueueName(C.invertMove(flat[idx].m), dur(), renderStep);
   }
   function jump(i) {
-    solveView.clearQueue(); solveView.anim = null; auto = false; $('bAuto').textContent = 'Auto';
+    solveView.clearQueue(); solveView.anim = null; auto = false; setAutoIcon('bAuto', false);
     idx = i; solveView.setState(states[i]); renderStep();
   }
-  $('bNext').onclick = function () { auto = false; $('bAuto').textContent = 'Auto'; next(); };
-  $('bBack').onclick = function () { auto = false; $('bAuto').textContent = 'Auto'; back(); };
+  $('bNext').onclick = function () { auto = false; setAutoIcon('bAuto', false); next(); };
+  $('bBack').onclick = function () { auto = false; setAutoIcon('bAuto', false); back(); };
   $('bStart').onclick = function () { jump(0); };
   $('bAuto').onclick = function () {
-    if (auto) { auto = false; this.textContent = 'Auto'; return; }
+    if (auto) { auto = false; setAutoIcon('bAuto', false); return; }
     if (idx >= flat.length) jump(0);
-    auto = true; this.textContent = 'Pause';
+    auto = true; setAutoIcon('bAuto', true);
     (function step() { if (!auto) return; next(function () { setTimeout(step, 120); }); })();
   };
   $('btnFollow').onclick = function () { follow = !follow; this.classList.toggle('on', follow); renderStep(); };
@@ -332,7 +344,7 @@
   function openLesson(sec, grp, it) {
     var a = LL.analyze(it); lCur = { sec: sec, grp: grp, it: it }; lMoves = a.moves; lStates = [a.start];
     lMoves.forEach(function (m, i) { lStates.push(C.applyMove(lStates[i], m)); });
-    lIdx = 0; lAuto = false; $('lAuto').textContent = 'Auto';
+    lIdx = 0; lAuto = false; setAutoIcon('lAuto', false);
     $('lTitle').textContent = it.name;
     $('lessonListWrap').hidden = true; $('lessonDetail').hidden = false;
     if (!lOpen) { lOpen = true; pushBack('lesson', hideLesson); }
@@ -357,7 +369,7 @@
   }
   function lDur() { return parseInt($('selSpeedLesson').value, 10); }
   function lNext(cb) {
-    if (lessonView.isBusy() || lIdx >= lMoves.length) { lAuto = false; $('lAuto').textContent = 'Auto'; return; }
+    if (lessonView.isBusy() || lIdx >= lMoves.length) { lAuto = false; setAutoIcon('lAuto', false); return; }
     var m = lMoves[lIdx]; lIdx++; lessonView.highlight = -1;
     lessonView.enqueueName(m, lDur(), function () { renderLesson(); if (cb) cb(); });
   }
@@ -365,14 +377,14 @@
     if (lessonView.isBusy() || lIdx <= 0) return;
     lIdx--; lessonView.highlight = -1; lessonView.enqueueName(C.invertMove(lMoves[lIdx]), lDur(), renderLesson);
   }
-  function lJump(i) { lessonView.clearQueue(); lessonView.anim = null; lAuto = false; $('lAuto').textContent = 'Auto'; lIdx = i; lessonView.setState(lStates[i]); renderLesson(); }
-  $('lNext').onclick = function () { lAuto = false; $('lAuto').textContent = 'Auto'; lNext(); };
-  $('lBackStep').onclick = function () { lAuto = false; $('lAuto').textContent = 'Auto'; lPrev(); };
+  function lJump(i) { lessonView.clearQueue(); lessonView.anim = null; lAuto = false; setAutoIcon('lAuto', false); lIdx = i; lessonView.setState(lStates[i]); renderLesson(); }
+  $('lNext').onclick = function () { lAuto = false; setAutoIcon('lAuto', false); lNext(); };
+  $('lBackStep').onclick = function () { lAuto = false; setAutoIcon('lAuto', false); lPrev(); };
   $('lStart').onclick = function () { lJump(0); };
   $('lAuto').onclick = function () {
-    if (lAuto) { lAuto = false; this.textContent = 'Auto'; return; }
+    if (lAuto) { lAuto = false; setAutoIcon('lAuto', false); return; }
     if (lIdx >= lMoves.length) lJump(0);
-    lAuto = true; this.textContent = 'Pause';
+    lAuto = true; setAutoIcon('lAuto', true);
     (function step() { if (!lAuto) return; lNext(function () { setTimeout(step, 150); }); })();
   };
 
@@ -409,34 +421,51 @@
     if (!$('solvePane').hidden) renderStep();
   }
   $('themeBtn').onclick = function () { theme = theme === 'dark' ? 'light' : 'dark'; store.set('zauber.theme', theme); applyDesign(); };
-  function updateRingBtn() { var c4 = accentOf(pendHue), b = $('ringOk'); b.style.background = c4; b.style.color = onAccent(c4); }
-  var ring = $('ring');
+  function updateRingBtn() {
+    var c4 = accentOf(pendHue), b = $('ringOk');
+    b.style.background = c4; b.style.color = onAccent(c4);
+    $('themeBtn').style.setProperty('--prev', c4);
+  }
+  var ring = $('ring'), ringCache = null, ringRect = null;
+  function buildRingCache(W, d) {
+    var cv = document.createElement('canvas'); cv.width = Math.round(W * d); cv.height = Math.round(W * d);
+    var ctx = cv.getContext('2d'), cx = W / 2, rad = W * 0.415, th = W * 0.06;
+    ctx.setTransform(d, 0, 0, d, 0, 0); ctx.lineWidth = th + 0.8;
+    for (var a2 = 0; a2 < 360; a2 += 1) {
+      ctx.strokeStyle = 'hsl(' + a2 + ',75%,52%)'; ctx.beginPath();
+      ctx.arc(cx, cx, rad, (a2 - 90.6) * Math.PI / 180, (a2 - 89.4) * Math.PI / 180); ctx.stroke();
+    }
+    return { cv: cv, w: cv.width };
+  }
   function drawRing() {
     var r = ring.getBoundingClientRect(), d = window.devicePixelRatio || 1;
     if (!r.width) return;
     if (ring.width !== Math.round(r.width * d)) { ring.width = Math.round(r.width * d); ring.height = Math.round(r.height * d); }
+    if (!ringCache || ringCache.w !== ring.width) ringCache = buildRingCache(r.width, d);
     var ctx = ring.getContext('2d'), W = r.width, cx = W / 2, rad = W * 0.415, th = W * 0.06;
-    ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, W); ctx.lineWidth = th + 0.8;
-    for (var a = 0; a < 360; a += 1) {
-      ctx.strokeStyle = 'hsl(' + a + ',75%,52%)'; ctx.beginPath();
-      ctx.arc(cx, cx, rad, (a - 90.6) * Math.PI / 180, (a - 89.4) * Math.PI / 180); ctx.stroke();
-    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ring.width, ring.height); ctx.drawImage(ringCache.cv, 0, 0);
+    ctx.setTransform(d, 0, 0, d, 0, 0);
     var ang = (pendHue - 90) * Math.PI / 180, mx = cx + Math.cos(ang) * rad, my = cx + Math.sin(ang) * rad;
     ctx.beginPath(); ctx.arc(mx, my, th * 1.05, 0, Math.PI * 2); ctx.fillStyle = hsl2hex(pendHue, 75, 52); ctx.fill();
     ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
     ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.arc(mx, my, th * 1.05 + 2, 0, Math.PI * 2); ctx.stroke();
   }
-  var ringDrag = false;
-  function ringPick(e) {
-    var r = ring.getBoundingClientRect(), x = e.clientX - r.left - r.width / 2, y = e.clientY - r.top - r.height / 2;
+  var ringDrag = false, ringPt = null, ringRaf = 0;
+  function ringFrame() {
+    ringRaf = 0; if (!ringPt || !ringRect) return;
+    var x = ringPt[0] - ringRect.left - ringRect.width / 2, y = ringPt[1] - ringRect.top - ringRect.height / 2;
     pendHue = (Math.atan2(y, x) * 180 / Math.PI + 90 + 360) % 360; updateRingBtn(); drawRing();
   }
-  ring.addEventListener('pointerdown', function (e) { ringDrag = true; ring.setPointerCapture(e.pointerId); ringPick(e); });
-  ring.addEventListener('pointermove', function (e) { if (ringDrag) ringPick(e); });
+  function ringPick(e) { ringPt = [e.clientX, e.clientY]; if (!ringRaf) ringRaf = requestAnimationFrame(ringFrame); }
+  ring.addEventListener('pointerdown', function (e) { ringDrag = true; ringRect = ring.getBoundingClientRect(); ring.setPointerCapture(e.pointerId); ringPick(e); });
+  ring.addEventListener('pointermove', function (e) {
+    if (!ringDrag) return;
+    var ev = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+    ringPick(ev && ev.length ? ev[ev.length - 1] : e);
+  });
   ring.addEventListener('pointerup', function () { ringDrag = false; });
   ring.addEventListener('pointercancel', function () { ringDrag = false; });
   $('ringOk').onclick = function () { hue = pendHue; store.set('zauber.hue', String(Math.round(hue))); applyDesign(); };
-  $('accReset').onclick = function () { pendHue = 0; updateRingBtn(); drawRing(); };
   applyDesign();
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {});
