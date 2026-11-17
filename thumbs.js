@@ -12,9 +12,9 @@
   function accent() { return (root.getComputedStyle(root.document.documentElement).getPropertyValue('--accent') || '#d62828').trim(); }
 
   // 3D-Würfel, kleine Ansicht
-  function iso(canvas, state, yaw, pitch) {
+  function iso(canvas, state, yaw, pitch, G) {
     var p = prep(canvas); if (!p) return;
-    root.paintCube(p.ctx, p.W, p.H, p.d, state, yaw === undefined ? -0.6 : yaw, pitch === undefined ? 0.5 : pitch, null, -1, -1);
+    root.paintCube(p.ctx, p.W, p.H, p.d, state, yaw === undefined ? -0.6 : yaw, pitch === undefined ? 0.5 : pitch, null, -1, -1, G);
   }
 
   // Ansicht von oben: Oberseite + Seitenstreifen der oberen Schicht

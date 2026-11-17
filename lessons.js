@@ -3,11 +3,30 @@
   'use strict';
   var C = (typeof require !== 'undefined' && typeof module !== 'undefined') ? require('./cube.js') : root.CubeLib;
   var S = (typeof require !== 'undefined' && typeof module !== 'undefined') ? require('./solver.js') : root.SolverLib;
+  var C4 = (typeof require !== 'undefined' && typeof module !== 'undefined') ? C.make(4) : root.Cube4;
   function rep(a, n) { var o = []; for (var i = 0; i < n; i++) o.push(a); return o.join(' '); }
   var TRIG = "R U R' U'";
   function L(name, alg, desc) { return { name: name, alg: alg, desc: desc || '' }; }
 
   var SECTIONS = [
+    { id: 'x4', name: '4x4', kind: 'iso', lib: 4, groups: [
+      { name: 'Zentren', items: [
+        L('Zentren-Dreiertausch A', "2U L 2U' 2L 2U L' 2U' 2L'", 'Tauscht drei Zentrumssteine im Kreis, alles andere bleibt. Mit kurzen Vorbereitungszügen holst du damit jeden Zentrumsstein an seinen Platz.'),
+        L('Zentren-Dreiertausch B', "2R F 2R' 2F 2R F' 2R' 2F'", 'Gleiches Prinzip mit anderen Seiten: Eine Innenschicht wird bewegt, eine Außenseite gedreht, dann wird alles zurückgedreht.'),
+        L('Zentren-Dreiertausch C', "2U' L 2U 2R2 2U' L' 2U 2R2", 'Dreht eine Innenschicht weg und holt sie von der anderen Seite zurück, so wandern drei Zentrumssteine.'),
+        L('Zentren-Dreiertausch D', "2L B 2L' 2F 2L B' 2L' 2F'", 'Dieselbe Idee an der linken und rechten Innenschicht.')
+      ] },
+      { name: 'Kanten paaren', items: [
+        L('Kantenpaare A', "2U L 2U' R 2U L' 2U' R'", 'Bewegt zwei Dreiergruppen von Kantenteilen gleichzeitig. Damit setzt du ein passendes Kantenteil neben sein Gegenstück.'),
+        L('Kantenpaare B', "2L B 2L' F 2L B' 2L' F'", 'Gleiches Prinzip an den Seiten links, hinten und vorne.'),
+        L('Kantenpaare C', "2R' U' 2R D 2R' U 2R D'", 'Gleiches Prinzip mit rechter Innenschicht.'),
+        L('Kantenpaare D', "2F D 2F' U' 2F D' 2F' U", 'Gleiches Prinzip mit vorderer Innenschicht.')
+      ] },
+      { name: 'Parität', items: [
+        L('OLL-Parität', "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2", 'Behebt den Fall, dass bei der letzten Ebene eine einzelne Kante falsch herum steht (beim 3x3 unmöglich). Die Kante wird umgedreht, alles andere bleibt.'),
+        L('PLL-Parität', "2R2 U2 2R2 u2 2R2 2U2", 'Behebt den Fall, dass zwei Kanten vertauscht werden müssen (beim 3x3 unmöglich). Vertauscht zwei Kantenpaare, alles andere bleibt.')
+      ] }
+    ] },
     { id: 'basic', name: 'Anfänger', kind: 'iso', groups: [
       { name: 'Erste Schicht', items: [
         L('Trigger', TRIG, 'Der wichtigste Baustein der Anfängermethode. Er holt Ecken heraus oder setzt sie ein. Sechsmal ausgeführt ergibt er wieder den Ausgangszustand.'),
@@ -118,9 +137,10 @@
   ];
 
   // ---------- Analyse ----------
-  var identity = new Uint8Array(54); for (var q = 0; q < 54; q++) identity[q] = q;
-  function comp(a, b) { var o = new Uint8Array(54); for (var i = 0; i < 54; i++) o[i] = a[b[i]]; return o; } // erst a, dann b
-  function inverse(p) { var o = new Uint8Array(54); for (var i = 0; i < 54; i++) o[p[i]] = i; return o; }
+  function mkId(n) { var a = new Uint8Array(n); for (var i = 0; i < n; i++) a[i] = i; return a; }
+  function comp(a, b) { var o = new Uint8Array(a.length); for (var i = 0; i < a.length; i++) o[i] = a[b[i]]; return o; } // erst a, dann b
+  function inverse(p) { var o = new Uint8Array(p.length); for (var i = 0; i < p.length; i++) o[p[i]] = i; return o; }
+  var identity = mkId(54);
   var rotations = (function () {
     var seen = {}, list = [], queue = [identity];
     seen[identity.join()] = 1; list.push(identity);
@@ -135,35 +155,43 @@
   var faceOfColor = []; C.SCHEME.forEach(function (c, f) { faceOfColor[c] = f; });
   var st = C.stickers;
   function topLayer(i) { return st[i].p[1] === 1; }
-  function inSlot(i) { // Ecke DFR und Kante FR (F2L-Platz vorne rechts)
-    var p = st[i].p; return (p[0] === 1 && p[1] === -1 && p[2] === 1) || (p[0] === 1 && p[1] === 0 && p[2] === 1);
+  function inSlot(i) { var p = st[i].p; return (p[0] === 1 && p[1] === -1 && p[2] === 1) || (p[0] === 1 && p[1] === 0 && p[2] === 1); }
+  function analyze4(it) {
+    var Lb = C4, moves = Lb.parseAlg(it.alg), total = mkId(Lb.SZ);
+    moves.forEach(function (m) { total = comp(total, Lb.permOfMove(m)); });
+    var ninv = inverse(total), solved = Lb.solvedColors(), full = new Uint8Array(Lb.SZ), gray = new Uint8Array(Lb.SZ), moved = [], rel = {};
+    for (var j = 0; j < Lb.SZ; j++) { full[j] = solved[ninv[j]]; if (total[j] !== j) { moved.push(j); rel[Lb.stickers[j].p.join()] = 1; } }
+    for (j = 0; j < Lb.SZ; j++) gray[j] = rel[Lb.stickers[j].p.join()] ? full[j] : 6;
+    it._a = { lib: Lb, moves: moves, start: gray, full: full, after: Lb.applyPerm(gray, total), moved: moved, rot: false, arrows: [], yBefore: 0, inU: false, inF2L: false, uKept: true, nonrot: total };
+    return it._a;
   }
   function analyze(it) {
     if (it._a) return it._a;
+    if (it._n === 4) return analyze4(it);
     var moves = C.parseAlg(it.alg), total = identity;
     moves.forEach(function (m) { total = comp(total, C.permOfMove(m)); });
     var sig = centerSig(total), rot = identity;
     for (var r = 0; r < rotations.length; r++) if (centerSig(rotations[r]) === sig) { rot = rotations[r]; break; }
     var rinv = inverse(rot), nonrot = new Uint8Array(54);
     for (var e = 0; e < 54; e++) nonrot[e] = total[rinv[e]];
-    var ninv = inverse(nonrot), solved = C.solvedColors(), full = new Uint8Array(54), gray = new Uint8Array(54), moved = [];
-    for (var j = 0; j < 54; j++) { full[j] = solved[ninv[j]]; if (nonrot[j] !== j) moved.push(j); }
-    for (j = 0; j < 54; j++) gray[j] = nonrot[j] !== j ? full[j] : 6;
-    // Ergebnis des Algorithmus auf dem gelösten Würfel (ohne Drehung) – für Prüfung/Zusammenfassung
+    var ninv = inverse(nonrot), solved = C.solvedColors(), full = new Uint8Array(54), gray = new Uint8Array(54), moved = [], relPos = {};
+    for (var j = 0; j < 54; j++) { full[j] = solved[ninv[j]]; if (nonrot[j] !== j) { moved.push(j); relPos[st[j].p.join()] = 1; } }
+    // Beteiligte Ebene: alle Steine der oberen Schicht sowie jeder bewegte Stein werden farbig gezeigt, alles andere grau
+    for (j = 0; j < 54; j++) if (topLayer(j)) relPos[st[j].p.join()] = 1;
+    for (j = 0; j < 54; j++) gray[j] = relPos[st[j].p.join()] ? full[j] : 6;
     var after = C.applyPerm(solved, nonrot), norm = new Uint8Array(54);
     for (j = 0; j < 54; j++) norm[j] = faceOfColor[after[j]];
     var lo = S.locate(norm), edgeSlots = S.edgeSlots, cornerSlots = S.cornerSlots;
     var info = { eMap: {}, cMap: {}, flipE: 0, twistC: 0 };
     for (var h = 0; h < 12; h++) { var sl = lo.e[h] >> 1, o = lo.e[h] & 1; if (sl !== h) info.eMap[h] = sl; else if (o) info.flipE++; }
     for (h = 0; h < 8; h++) { var sc = (lo.c[h] / 3) | 0, oc = lo.c[h] % 3; if (sc !== h) info.cMap[h] = sc; else if (oc) info.twistC++; }
-    // Pfeile: Stein steht im Ausgangsfall bei "to", geht an seinen Platz "from"=home. (after: Stein h liegt bei Platz sl)
     var arrows = [];
     Object.keys(info.eMap).forEach(function (hh) { arrows.push({ from: edgeSlots[hh].p, to: edgeSlots[info.eMap[hh]].p, kind: 'e' }); });
     Object.keys(info.cMap).forEach(function (hh) { arrows.push({ from: cornerSlots[hh].p, to: cornerSlots[info.cMap[hh]].p, kind: 'c' }); });
     var uColor = solved[0], yBefore = 0; for (j = 0; j < 9; j++) if (full[j] === uColor) yBefore++;
     var inU = moved.every(topLayer), inF2L = moved.every(function (i) { return topLayer(i) || inSlot(i); });
     var uKept = true; for (j = 0; j < 9; j++) if (after[j] !== uColor) uKept = false;
-    it._a = { after: C.applyPerm(gray, nonrot), moves: moves, start: gray, full: full, moved: moved, rot: rot !== identity, info: info, arrows: arrows, yBefore: yBefore, inU: inU, inF2L: inF2L, uKept: uKept, nonrot: nonrot };
+    it._a = { lib: C, after: C.applyPerm(gray, nonrot), moves: moves, start: gray, full: full, moved: moved, rot: rot !== identity, info: info, arrows: arrows, yBefore: yBefore, inU: inU, inF2L: inF2L, uKept: uKept, nonrot: nonrot };
     return it._a;
   }
   function cycles(map) {
@@ -175,39 +203,38 @@
     });
     return out;
   }
-  function summary(sec, it) {
+  function summary(sec, it, tr) {
+    tr = tr || function (t, a) { return (a || []).reduce(function (x, v, i) { return x.replace('{' + i + '}', v); }, t); };
     var a = analyze(it), i = a.info, parts = [];
-    if (sec.id === 'oll') {
-      parts.push('Macht die Oberseite komplett gelb (vorher ' + a.yBefore + ' von 9 Feldern gelb).');
-      return parts.join(' ');
-    }
+    if (sec.id === 'x4') return tr(it.desc);
+    if (sec.id === 'oll') return tr('Macht die Oberseite komplett gelb (vorher {0} von 9 Feldern gelb).', [a.yBefore]);
     var ce = cycles(i.eMap), cc = cycles(i.cMap);
-    function txt(cy, w) {
-      if (!cy.length) return null;
-      var c3 = cy.filter(function (n) { return n === 3; }).length, c2 = cy.filter(function (n) { return n === 2; }).length;
-      var r = [];
-      if (c3) r.push(c3 === 1 ? '3 ' + w + ' wandern im Kreis' : c3 + ' Dreierzyklen von ' + w);
-      if (c2) r.push(c2 === 1 ? '2 ' + w + ' tauschen die Plätze' : c2 + ' Paare von ' + w + ' tauschen');
-      cy.filter(function (n) { return n > 3; }).forEach(function (n) { r.push(n + ' ' + w + ' wandern im Kreis'); });
-      return r.join(', ');
+    function txt(cy, kind) {
+      var out = [], c3 = cy.filter(function (n) { return n === 3; }).length, c2 = cy.filter(function (n) { return n === 2; }).length;
+      if (c3) out.push(c3 === 1 ? tr(kind === 'e' ? '3 Kanten wandern im Kreis' : '3 Ecken wandern im Kreis') : tr(kind === 'e' ? '{0} Dreierzyklen von Kanten' : '{0} Dreierzyklen von Ecken', [c3]));
+      if (c2) out.push(c2 === 1 ? tr(kind === 'e' ? '2 Kanten tauschen die Plätze' : '2 Ecken tauschen die Plätze') : tr(kind === 'e' ? '{0} Paare von Kanten tauschen' : '{0} Paare von Ecken tauschen', [c2]));
+      cy.filter(function (n) { return n > 3; }).forEach(function (n) { out.push(tr(kind === 'e' ? '{0} Kanten wandern im Kreis' : '{0} Ecken wandern im Kreis', [n])); });
+      return out.length ? out.join(', ') : null;
     }
-    var te = txt(ce, 'Kanten'), tc = txt(cc, 'Ecken');
+    var te = txt(ce, 'e'), tc = txt(cc, 'c');
     if (sec.id === 'pll') {
       if (te) parts.push(te.charAt(0).toUpperCase() + te.slice(1) + '.');
-      if (tc) parts.push((te ? '' : '') + tc.charAt(0).toUpperCase() + tc.slice(1) + '.');
-      parts.push('Die Oberseite bleibt gelb.');
+      if (tc) parts.push(tc.charAt(0).toUpperCase() + tc.slice(1) + '.');
+      parts.push(tr('Die Oberseite bleibt gelb.'));
       return parts.join(' ');
     }
-    if (sec.id === 'f2l') return 'Bringt Eckstein und Kantenstein zusammen in den Platz vorne rechts, ohne die fertigen Teile zu zerstören.';
-    return it.desc || '';
+    if (sec.id === 'f2l') return tr('Bringt Eckstein und Kantenstein zusammen in den Platz vorne rechts, ohne die fertigen Teile zu zerstören.');
+    return tr(it.desc || '');
   }
   function validFor(sec, it) {
     var a = analyze(it);
+    if (sec.id === 'x4') return a.moved.length > 0;
     if (sec.id === 'oll') return a.inU && a.moved.length > 0;
     if (sec.id === 'pll') return a.inU && a.uKept && a.moved.length > 0;
     if (sec.id === 'f2l') return a.inF2L && a.moved.length > 0;
     return a.moved.length > 0;
   }
+  SECTIONS.forEach(function (sec) { sec.lib = sec.lib === 4 ? C4 : C; sec.groups.forEach(function (g) { g.items.forEach(function (it) { it._n = sec.lib.N; }); }); });
   var api = { SECTIONS: SECTIONS, analyze: analyze, summary: summary, validFor: validFor };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.LessonLib = api;
 })(typeof window !== 'undefined' ? window : this);
