@@ -1,5 +1,5 @@
-const CACHE = 'zauber-v6';
-const FILES = ['./', 'index.html', 'style.css', 'cube.js', 'solver.js', 'lessons.js', 'thumbs.js', 'render.js', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+const CACHE = 'zauber-v7';
+const FILES = ['./', 'index.html', 'style.css', 'cube.js', 'solver.js', 'solver4.js', 'i18n.js', 'lessons.js', 'thumbs.js', 'render.js', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));

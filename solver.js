@@ -149,7 +149,7 @@
       if (colors[i] === null || colors[i] === undefined || colors[i] < 0) return { ok: false, error: 'Es sind noch nicht alle Felder ausgefüllt.' };
       counts[colors[i]]++;
     }
-    for (i = 0; i < 6; i++) if (counts[i] !== 9) return { ok: false, error: C.COLOR_NAMES[i] + ' kommt ' + counts[i] + '-mal vor – es müssen genau 9 Felder pro Farbe sein.' };
+    for (i = 0; i < 6; i++) if (counts[i] !== 9) return { ok: false, error: '{0} kommt {1}-mal vor - es müssen genau 9 Felder pro Farbe sein.', args: [C.COLOR_NAMES[i], counts[i]] };
     var centers = {}; for (i = 0; i < 6; i++) centers[colors[i * 9 + 4]] = 1;
     if (Object.keys(centers).length !== 6) return { ok: false, error: 'Jede Seite braucht eine andere Mittelfarbe (die Mittelsteine sind immer 6 verschiedene Farben).' };
     var s = normalize(colors), eSeen = {}, cSeen = {}, eSlot = [], cSlot = [], flip = 0, twist = 0;
@@ -172,13 +172,13 @@
       var pa = (a === 0 || a === 3) ? 0 : (a === 2 || a === 5) ? 1 : 2, pb = (b === 0 || b === 3) ? 0 : (b === 2 || b === 5) ? 1 : 2;
       if (pa > pb) flip++;
     }
-    if (flip % 2) return { ok: false, error: 'Eine einzelne Kante ist falsch herum eingetragen (gedreht). Bitte die Farben der Kanten prüfen.' };
+    if (flip % 2) return { ok: false, kind: 'flip', error: 'Eine einzelne Kante ist falsch herum eingetragen (gedreht). Bitte die Farben der Kanten prüfen.' };
     for (i = 0; i < 8; i++) {
       var jj = cornerSlots[i].idx;
       for (var t = 0; t < 3; t++) { var col = s[jj[t]]; if (col === 0 || col === 3) { twist += t; break; } }
     }
     if (twist % 3) return { ok: false, error: 'Eine einzelne Ecke ist verdreht eingetragen. Bitte die Farben der Ecken prüfen.' };
-    if (parity(eSlot) !== parity(cSlot)) return { ok: false, error: 'Zwei Steine scheinen vertauscht zu sein – das ist bei einem echten Würfel nicht möglich. Bitte Kanten und Ecken prüfen.' };
+    if (parity(eSlot) !== parity(cSlot)) return { ok: false, kind: 'perm', error: 'Zwei Steine scheinen vertauscht zu sein – das ist bei einem echten Würfel nicht möglich. Bitte Kanten und Ecken prüfen.' };
     return { ok: true, normalized: s };
   }
 

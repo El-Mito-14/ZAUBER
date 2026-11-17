@@ -11,29 +11,30 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="topbar"><button id="gearBtn" aria-label="Einstellungen" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button></div>
 <main>
   <!-- Funktion 1: 3D-Würfel -->
   <section id="screen-cube" class="screen active">
     <div class="stage grow">
       <canvas id="cube3d"></canvas>
-      <button class="info" data-info="cube" aria-label="Hinweise">i</button>
-      <div class="overlay" id="cubeStatus">Züge: 0</div>
+      <button class="info" data-info="cube" aria-label="i">i</button>
+      <div class="overlay" id="cubeStatus"></div>
     </div>
     <div id="autoBar" class="row" hidden>
-      <button id="aPause" class="primary">Pause</button>
-      <button id="aStop">Stopp</button>
-      <select id="selSpeedCube" aria-label="Geschwindigkeit"></select>
+      <button id="aPause" class="primary" data-t>Pause</button>
+      <button id="aStop" data-t>Stopp</button>
+      <button id="spdCube" class="spdBtn"></button>
     </div>
     <div class="seg" id="modeSeg">
-      <button data-m="free" class="on">Frei</button>
-      <button data-m="view">Nur Ansicht</button>
-      <button data-m="layer">Nur Ebenen</button>
+      <button data-m="free" class="on" data-t>Frei</button>
+      <button data-m="view" data-t>Nur Ansicht</button>
+      <button data-m="layer" data-t>Nur Ebenen</button>
     </div>
     <div class="row">
-      <button id="btnScramble">Mischen</button>
-      <button id="btnUndo">Zurück</button>
-      <button id="btnReset">Neu</button>
-      <button id="btnAutoSolve" class="primary">Lösen</button>
+      <button id="btnScramble" data-t>Mischen</button>
+      <button id="btnUndo" data-t>Zurück</button>
+      <button id="btnReset" data-t>Neu</button>
+      <button id="btnAutoSolve" class="primary" data-t>Lösen</button>
     </div>
   </section>
 
@@ -47,15 +48,15 @@
       </div>
       <div id="errBox" class="err" hidden></div>
       <div class="row">
-        <button class="infoBtn" data-info="input" aria-label="Hinweise">i</button>
-        <button id="btnClear">Leeren</button>
-        <button id="btnFromCube">Vom 3D-Würfel</button>
-        <button id="btnCompute" class="primary">Lösung berechnen</button>
+        <button class="infoBtn" data-info="input" aria-label="i">i</button>
+        <button id="btnClear" data-t>Leeren</button>
+        <button id="btnFromCube" data-t>Vom 3D-Würfel</button>
+        <button id="btnCompute" class="primary" data-t>Lösung berechnen</button>
       </div>
     </div>
 
     <div id="solvePane" class="pane" hidden>
-      <div class="topRow"><div id="phaseTitle"></div><button class="infoBtn" id="btnPhaseInfo" aria-label="Hinweise">i</button></div>
+      <div class="topRow"><div id="phaseTitle"></div><button class="infoBtn" id="btnPhaseInfo" aria-label="i">i</button></div>
       <div class="stage grow">
         <canvas id="solve3d"></canvas>
         <canvas id="netMini" class="netOv"></canvas>
@@ -63,20 +64,20 @@
       <div class="moveRow">
         <div class="move" id="moveBig">-</div>
         <div class="moveCol"><div class="moveDesc" id="moveDesc"></div><div class="status" id="stepInfo"></div></div>
-        <select id="selSpeed" aria-label="Geschwindigkeit"></select>
+        <button id="spdSolve" class="spdBtn"></button>
       </div>
       <div class="row ctrl">
-        <button id="bStart" aria-label="Anfang" title="Anfang"></button>
-        <button id="bBack" aria-label="Zurück" title="Zurück"></button>
-        <button id="bAuto" class="primary" aria-label="Auto" title="Auto"></button>
-        <button id="bNext" aria-label="Weiter" title="Weiter"></button>
+        <button id="bStart" data-ta="Anfang"></button>
+        <button id="bBack" data-ta="Zurück"></button>
+        <button id="bAuto" class="primary" data-ta="Auto"></button>
+        <button id="bNext" data-ta="Weiter"></button>
       </div>
       <div class="chips" id="chips"></div>
       <div class="row">
-        <button id="btnFollow" class="toggle">Folgen</button>
-        <button id="btnAlg">Algorithmus</button>
-        <button id="btnRecipe">Rezept</button>
-        <button id="btnBackInput">Neu</button>
+        <button id="btnFollow" class="toggle" data-t>Folgen</button>
+        <button id="btnAlg" data-t>Algorithmus</button>
+        <button id="btnRecipe" data-t>Rezept</button>
+        <button id="btnBackInput" data-t>Neu</button>
       </div>
     </div>
   </section>
@@ -88,41 +89,59 @@
       <div id="lessonList"></div>
     </div>
     <div id="lessonDetail" class="pane" hidden>
-      <div class="topRow"><button id="lBack">Zurück</button><div id="lTitle" class="ltitle"></div><button class="infoBtn" id="btnLInfo" aria-label="Hinweise">i</button></div>
+      <div class="topRow"><button id="lBack" data-t>Zurück</button><div id="lTitle" class="ltitle"></div><button class="infoBtn" id="btnLInfo" aria-label="i">i</button></div>
       <div class="stage grow">
         <canvas id="lesson3d"></canvas>
-        <div class="ovThumb left"><canvas id="lBefore" class="thumb"></canvas><span>Vorher</span></div>
-        <div class="ovThumb right"><canvas id="lAfter" class="thumb"></canvas><span>Nachher</span></div>
+        <div class="ovThumb left"><canvas id="lBefore" class="thumb"></canvas><span data-t>Vorher</span></div>
+        <div class="ovThumb right"><canvas id="lAfter" class="thumb"></canvas><span data-t>Nachher</span></div>
       </div>
       <div class="chips" id="lMoves"></div>
       <div class="row ctrl">
-        <button id="lStart" aria-label="Anfang" title="Anfang"></button>
-        <button id="lBackStep" aria-label="Zurück" title="Zurück"></button>
-        <button id="lAuto" class="primary" aria-label="Auto" title="Auto"></button>
-        <button id="lNext" aria-label="Weiter" title="Weiter"></button>
+        <button id="lStart" data-ta="Anfang"></button>
+        <button id="lBackStep" data-ta="Zurück"></button>
+        <button id="lAuto" class="primary" data-ta="Auto"></button>
+        <button id="lNext" data-ta="Weiter"></button>
       </div>
-      <div class="row"><div class="status grow" id="lInfo"></div><select id="selSpeedLesson" aria-label="Geschwindigkeit"></select></div>
+      <div class="row"><div class="status grow" id="lInfo"></div><button id="spdLesson" class="spdBtn"></button></div>
     </div>
   </section>
 
-  <!-- Design -->
+  <!-- Einstellungen -->
   <section id="screen-settings" class="screen">
-    <div class="row"><button id="themeBtn" class="themeBtn"></button></div>
-    <div class="ringWrap"><canvas id="ring"></canvas><button id="ringOk">Fertig</button></div>
+    <div class="topRow"><button id="setBack" data-t>Zurück</button><div class="ltitle" data-t>Einstellungen</div><span class="spacer"></span></div>
+    <div class="acc" id="acc-design">
+      <button class="accHead"><span data-t>Design</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="accBody">
+        <div class="row"><button id="themeBtn" class="themeBtn"></button></div>
+        <div class="ringWrap"><canvas id="ring"></canvas><button id="ringOk" data-t>Fertig</button></div>
+      </div>
+    </div>
+    <div class="acc" id="acc-cube">
+      <button class="accHead"><span data-t>Würfel</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="accBody">
+        <div class="seg" id="sizeSeg"><button data-n="3">3x3</button><button data-n="4">4x4</button></div>
+        <p class="lDesc" data-t>Wähle, ob du mit dem 3x3- oder dem 4x4-Würfel arbeiten möchtest. Das gilt für Würfel, Lösen und Lektionen.</p>
+      </div>
+    </div>
+    <div class="acc" id="acc-lang">
+      <button class="accHead"><span data-t>Sprache</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="accBody"><div id="langList"></div></div>
+    </div>
   </section>
 </main>
 <nav>
-  <button id="tab-cube" class="active">Würfel</button>
-  <button id="tab-solve">Lösen</button>
-  <button id="tab-lessons">Lektionen</button>
-  <button id="tab-settings">Design</button>
+  <button id="tab-cube" class="active" data-t>Würfel</button>
+  <button id="tab-solve" data-t>Lösen</button>
+  <button id="tab-lessons" data-t>Lektionen</button>
 </nav>
-<div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide">OK</button></div></div>
+<div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide" data-t>OK</button></div></div>
 <script src="cube.js"></script>
 <script src="solver.js"></script>
+<script src="solver4.js"></script>
 <script src="lessons.js"></script>
 <script src="render.js"></script>
 <script src="thumbs.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
