@@ -16,7 +16,7 @@
     this.G = opts.lib || C; this.state = this.G.solvedColors();
     this.yaw = -0.55; this.pitch = 0.5; this.target = null;
     this.layerDrag = opts.layerDrag !== false; this.mode = 'free'; // free | view | layer
-    this.queue = []; this.anim = null; this.highlight = -1;
+    this.queue = []; this.anim = null; this.highlight = null;
     this.onTurn = opts.onTurn || null; this.onTap = opts.onTap || null; this.selected = -1; this.polys = []; this.drag = null; this.busy = false;
     var self = this;
     this.resize();
@@ -117,7 +117,7 @@
         polys.push({ pts: mk(H, H), d: dist, c: BODY, body: true, hit: outer ? { p: p, n: n } : null });
         if (outer) {
           var fi = G.indexMap[G.key(p, n)], col = state[fi];
-          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, idx: fi, sel: selected === fi, face: G.stickers[fi].face, hl: highlight === G.stickers[fi].face, px: scale });
+          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, idx: fi, sel: selected === fi, face: G.stickers[fi].face, hl: !!highlight && highlight.cs.indexOf(p[highlight.k]) >= 0 && (n[highlight.k] !== 0 || Math.abs(p[highlight.k]) < mm - 0.01), px: scale });
         }
       }
     }

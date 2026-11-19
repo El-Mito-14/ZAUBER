@@ -5,6 +5,10 @@
   var FACE_DE = { U: 'Oben', D: 'Unten', L: 'Links', R: 'Rechts', F: 'Vorne', B: 'Hinten' };
   var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 
+  var hlOn = store.get('zauber.hl') !== '0';
+  function hlSpec(lib, m) { if (!hlOn) return null; var l = lib.moveToLayer(m); return l.cs.length === lib.N ? null : { k: l.k, cs: l.cs }; }
+  function netFace(lib, m) { if (!hlOn) return -1; var ch = m[0], i = 'UDLRFB'.indexOf(ch); if (i >= 0) return lib.FACE_NAMES.indexOf(ch); if (lib.N === 3 && 'udlrfb'.indexOf(ch) >= 0) return lib.FACE_NAMES.indexOf(ch.toUpperCase()); return -1; }
+
   // ---------- Würfelgröße ----------
   var cubeN = store.get('zauber.n') === '4' ? 4 : 3;
   var G = cubeN === 4 ? C4 : C3;
@@ -19,9 +23,9 @@
   };
   var SPD_IC = {
     vslow: '<svg viewBox="0 0 32 32"><circle cx="19" cy="14" r="8"/><circle cx="19" cy="14" r="3.4"/><path d="M3 26h22.5c1.8 0 2.8-1.2 2.8-2.6"/><path d="M5 26c-2-4-1-8 2-10"/><path d="M7 16l-1.6-4M9.4 16.6l1-4"/></svg>',
-    slow: '<svg viewBox="0 0 32 32"><path d="M5 22a11 9.5 0 0 1 22 0z"/><path d="M11 22l1.6-8.5M21 22l-1.6-8.5M9 16.5h14"/><circle cx="28.2" cy="19.6" r="2.6"/><path d="M10 22v4M22 22v4M5 21l-3 1.4"/></svg>',
+    slow: '<svg viewBox="0 0 32 32"><path d="M6 21.5C6 14.2 10.8 9 16.5 9S27 14.2 27 21.5z"/><path d="M11.5 21.5l1.6-8M21.5 21.5l-1.6-8M16.5 9.2v12M8 16.5h17"/><path d="M27 18.6c1.8-1.6 4.1-1 4.1.9 0 1.5-1.6 2.5-4.1 2"/><path d="M9.4 21.5v3.8M14 21.5v3.2M19.5 21.5v3.2M24 21.5v3.8"/><path d="M6 20.6l-3 1.6"/></svg>',
     normal: '<svg viewBox="0 0 32 32"><circle cx="16" cy="5.6" r="2.6"/><path d="M16 9v10"/><path d="M16 11.5l-6 5M16 11.5l6 4"/><path d="M16 19l-5.5 9M16 19l5.5 9"/></svg>',
-    fast: '<svg viewBox="0 0 32 32"><ellipse cx="14" cy="21" rx="9" ry="6"/><circle cx="24.5" cy="16" r="3.6"/><ellipse cx="22.8" cy="7.6" rx="1.6" ry="5" transform="rotate(-10 22.8 7.6)"/><ellipse cx="27.2" cy="8" rx="1.6" ry="4.6" transform="rotate(12 27.2 8)"/><circle cx="4.4" cy="19.6" r="2"/><path d="M10 26.5l-3 2M19 26.5l4 2"/></svg>',
+    fast: '<svg viewBox="0 0 32 32"><path d="M5 21.5c0-4.8 4-8.2 9.5-8.2 3.4 0 6.2 1 8 2.6"/><path d="M5 21.5c0 1.8 1.8 3.2 4.2 3.2h9.6c2.2 0 3.6-1.2 3.6-2.8"/><path d="M22.8 15.9c.6-1.6 2.2-2.4 3.7-2.1 1.2.2 2 1.2 2.1 2.4.1 1.4-.6 2.2-1.8 2.9-1.5.8-3.4.7-4.2-.4"/><path d="M24.8 13.6c-1.4-2.4-1.3-5.6.2-7 1.5 1.4 1.8 4.4 1.3 7.1M27.2 14c.8-2.3 2.2-4.2 3.5-4.1.5 1.8-.3 3.8-1.9 5.3"/><circle cx="4.4" cy="19.4" r="1.6"/><path d="M9.5 24.7l-3 2.6h4.2M19 24.5l3.4 2.8h-4"/></svg>',
     vfast: '<svg viewBox="0 0 32 32"><path d="M16 3c5 5 5 12 4 18h-8c-1-6-1-13 4-18z"/><circle cx="16" cy="12" r="2.2"/><path d="M12 18l-4 5 4-1M20 18l4 5-4-1"/><path d="M14 24c0 3 2 5 2 5s2-2 2-5"/></svg>'
   };
   var SPEEDS = [{ id: 'vslow', ms: 2400, label: 'sehr langsam' }, { id: 'slow', ms: 1000, label: 'langsam' }, { id: 'normal', ms: 350, label: 'normal' }, { id: 'fast', ms: 150, label: 'schnell' }, { id: 'vfast', ms: 70, label: 'sehr schnell' }];
@@ -50,7 +54,7 @@
   });
   var modalOpen = false, modalKind = '';
   function openModal(html, kind) {
-    $('modalText').innerHTML = html; modalKind = kind || ''; $('modal').hidden = false;
+    $('modalText').innerHTML = html; modalKind = kind || ''; $('modalClose').hidden = (kind === 'speed'); $('modal').hidden = false;
     if (!modalOpen) { modalOpen = true; pushBack('modal', hideModal); }
   }
   function hideModal() { $('modal').hidden = true; modalOpen = false; modalKind = ''; }
@@ -61,8 +65,7 @@
   function legendHtml() {
     return '<p>' + T('<b>U</b> = Oben, <b>D</b> = Unten, <b>L</b> = Links, <b>R</b> = Rechts, <b>F</b> = Vorne, <b>B</b> = Hinten.') + '</p>' +
       '<p>' + T("Ohne Zusatz: diese Seite eine Viertelumdrehung im Uhrzeigersinn drehen (mit Blick direkt auf die Seite). <b>'</b> = gegen den Uhrzeigersinn. <b>2</b> = halbe Umdrehung.") + '</p>' +
-      '<p>' + T('Kleine Buchstaben (r, l, u, d, f, b) drehen zwei Schichten zugleich, M, E und S die mittlere Schicht, x, y und z den ganzen Würfel.') + '</p>' +
-      (cubeN === 4 ? '<p>' + T('Beim 4x4 dreht eine Zahl davor (z. B. 2R) nur die zweite Schicht von dieser Seite aus.') + '</p>' : '');
+      (cubeN === 4 ? '<p>' + T('Beim 4x4: <b>R</b> dreht nur die äußere Schicht, <b>Rr</b> die äußeren zwei Schichten zugleich, <b>r</b> nur die innere (zweite) Schicht. Genauso bei U, F, L, D und B. x, y und z drehen den ganzen Würfel.') + '</p>' : '<p>' + T('Kleine Buchstaben (r, l, u, d, f, b) drehen zwei Schichten zugleich, M, E und S die mittlere Schicht, x, y und z den ganzen Würfel.') + '</p>');
   }
   function infoHtml(kind) {
     if (kind === 'cube') return '<p>' + T('<b>Schicht drehen:</b> Auf einen Stein tippen und in die gewünschte Richtung wischen. Die Schicht dreht sich mit.') + '</p>' +
@@ -72,9 +75,9 @@
       '<p>' + T('<b>Lösen:</b> Der Würfel löst sich selbst. Du kannst pausieren, stoppen und das Tempo ändern.') + '</p>';
     return '<p>' + T('<b>So geht es:</b> Tippe ein Feld auf dem Würfel an. Oben erscheint die Farbauswahl. Tippe die passende Farbe an, dann wird das Feld eingefärbt. Bereits gefärbte Felder kannst du erneut antippen und korrigieren. Die Auswahl schließt sich, wenn du eine Farbe wählst, irgendwo anders hintippst oder die Zurück-Taste deines Handys drückst.') + '</p>' +
       '<p>' + T('<b>Ansicht drehen:</b> Wische auf dem Würfel oder daneben, um auch Unterseite und Rückseite zu erreichen.') + '</p>' +
-      '<p>' + T('<b>Mittelsteine</b> sind fest. Halte deinen Würfel so: <b>Gelb oben, Grün vorne</b> (dann ist Orange rechts, Rot links, Blau hinten, Weiß unten).') + '</p>' +
+      (G.N === 3 ? '<p>' + T('<b>Mittelsteine</b> sind fest. Halte deinen Würfel so: <b>Gelb oben, Grün vorne</b> (dann ist Orange rechts, Rot links, Blau hinten, Weiß unten).') + '</p>' : '<p>' + T('Beim 4x4 gibt es keine festen Mittelsteine: Färbe alle {0} Felder selbst ein, auch die Mitten. Du kannst den Würfel beliebig halten.', [G.SZ]) + '</p>') +
       '<p>' + T('Jede Farbe kommt genau {0}-mal vor (Zähler an der Farbauswahl).', [G.N * G.N]) + '</p>' +
-      '<p>' + T('<b>Leeren</b> löscht alle Felder außer den Mittelsteinen. <b>Vom 3D-Würfel</b> übernimmt den Zustand aus dem Reiter Würfel.') + '</p>';
+      '<p>' + (G.N === 3 ? T('<b>Leeren</b> löscht alle Felder außer den Mittelsteinen. <b>Vom 3D-Würfel</b> übernimmt den Zustand aus dem Reiter Würfel.') : T('<b>Leeren</b> löscht alle Felder. <b>Vom 3D-Würfel</b> übernimmt den Zustand aus dem Reiter Würfel.')) + '</p>';
   }
   document.querySelectorAll('[data-info]').forEach(function (b) { b.onclick = function () { openModal(infoHtml(b.dataset.info)); }; });
 
@@ -97,7 +100,7 @@
     $('screen-settings').classList.add('active'); pushBack('settings', hideSettings);
     setTimeout(function () { drawRing(); updateRingBtn(); }, 30);
   }
-  $('gearBtn').onclick = function () { if (settingsOpen) closeSettings(); else openSettings(); };
+  Array.prototype.forEach.call(document.querySelectorAll('.gear'), function (g) { g.onclick = function () { if (settingsOpen) closeSettings(); else openSettings(); }; });
   function closeSettings() { if (settingsOpen) { hideSettings(); popBack('settings'); } }
   $('setBack').onclick = closeSettings;
   Array.prototype.forEach.call(document.querySelectorAll('.accHead'), function (b) {
@@ -194,7 +197,7 @@
   var inp, sel = -1, toastT = null;
   function clearInput() {
     inp = new Int8Array(G.SZ); inp.fill(-1);
-    for (var i = 0; i < G.SZ; i++) if (G.isCenter(i)) inp[i] = G.SCHEME[G.stickers[i].face];
+    if (G.N === 3) for (var i = 0; i < G.SZ; i++) if (G.isCenter(i)) inp[i] = G.SCHEME[G.stickers[i].face];
     sel = -1;
   }
   clearInput();
@@ -206,15 +209,15 @@
     b.onclick = function () { if (sel >= 0) { inp[sel] = c; closePalette(); $('errBox').hidden = true; refreshInput(); } };
     pal.appendChild(b);
   })(c);
-  function hidePalette() { sel = -1; palOpen = false; if (previewView) previewView.selected = -1; pal.hidden = true; }
+  function hidePalette() { sel = -1; palOpen = false; if (previewView) previewView.selected = -1; pal.hidden = true; $('preview3d').parentNode.classList.remove('pal'); }
   function closePalette() { if (palOpen) { hidePalette(); popBack('pal'); } }
   function toast(t, args) { $('inToast').textContent = T(t, args); clearTimeout(toastT); toastT = setTimeout(function () { $('inToast').textContent = ''; }, 2000); }
   previewView = new CubeView($('preview3d'), {
     layerDrag: false, lib: G,
     onTap: function (i) {
       if (i < 0) { closePalette(); return; }
-      if (G.isCenter(i)) { closePalette(); toast('Mittelsteine sind fest.'); return; }
-      sel = i; previewView.selected = i; pal.hidden = false;
+      if (G.N === 3 && G.isCenter(i)) { closePalette(); toast('Mittelsteine sind fest.'); return; }
+      sel = i; previewView.selected = i; pal.hidden = false; $('preview3d').parentNode.classList.add('pal');
       if (!palOpen) { palOpen = true; pushBack('pal', hidePalette); }
     }
   });
@@ -258,9 +261,16 @@
     }, 40);
   };
   function phaseCount() { return plan.N === 4 ? 10 : 7; }
-  function pName(p) { return T(p.name); }
+  var CN = ['Weiß', 'Gelb', 'Rot', 'Orange', 'Grün', 'Blau'];
+  function pName(p) {
+    if (plan.N === 4 && p.no <= 3) return T(p.name);
+    var n3 = plan.N === 4 ? p.no - 3 : p.no;
+    if (plan.dColor === 0 && plan.uColor === 1) return T(p.name);
+    var dn = T(CN[plan.dColor]), un = T(CN[plan.uColor]);
+    return [null, T('Kreuz unten ({0})', [dn]), T('Untere Ecken ({0})', [dn]), T('Mittlere Kanten'), T('Kreuz oben ({0})', [un]), T('Obere Ecken drehen ({0})', [un]), T('Ecken platzieren'), T('Kanten platzieren')][n3];
+  }
   function pDesc(p) {
-    var n3 = plan.N === 4 ? p.no - 3 : p.no, W = T('Weiß'), Y = T('Gelb');
+    var n3 = plan.N === 4 ? p.no - 3 : p.no, W = T(CN[plan.dColor]), Y = T(CN[plan.uColor]);
     if (plan.N === 4 && p.no === 1) return T('Bringe auf jeder Seite die vier Zentrumssteine in die Farbe der Seite. Danach verhalten sie sich wie die festen Mittelsteine eines 3x3.');
     if (plan.N === 4 && p.no === 2) return T('Setze die zwei Kantenteile jeder Kante zu einem Paar zusammen (gleiche Farben nebeneinander). Danach ist jede Kante wie beim 3x3.');
     if (plan.N === 4 && p.no === 3) return T('Diesen Fall gibt es nur beim 4x4. Ein besonderer Algorithmus korrigiert ihn, danach geht es wie beim 3x3 weiter.');
@@ -274,7 +284,7 @@
       T('Zum Schluss werden die letzten Kanten an ihren Platz getauscht - der Würfel ist dann gelöst.')][n3];
   }
   function startPlan(r) {
-    plan = r; plan.N = G.N; flat = []; states = [Uint8Array.from(inp)];
+    plan = r; plan.N = G.N; plan.dColor = G.N === 4 ? r.targets[3] : inp[31]; plan.uColor = G.N === 4 ? r.targets[0] : inp[4]; flat = []; states = [Uint8Array.from(inp)];
     r.phases.forEach(function (p) {
       p.startIdx = -1;
       p.segs.forEach(function (sg) {
@@ -293,12 +303,16 @@
     setTimeout(function () { solveView.resize(); solveView.setState(states[0]); renderStep(); }, 40);
   }
   function describe(m) {
-    var mm = /^(\d?)([UDLRFBudlrfb])(.*)$/.exec(m), suf = mm ? mm[3] : '';
+    var wide = G.N === 4 ? /^([UDLRFB])([udlrfbw])(.*)$/.exec(m) : null, inner = G.N === 4 ? /^([udlrfb])(.*)$/.exec(m) : null, std = /^([UDLRFBudlrfb])(.*)$/.exec(m);
+    var letter, suf, kind;
+    if (wide && (wide[2] === 'w' || wide[2] === wide[1].toLowerCase())) { letter = wide[1]; suf = wide[3]; kind = 'wide'; }
+    else if (inner) { letter = inner[1].toUpperCase(); suf = inner[2]; kind = 'inner'; }
+    else if (std) { letter = std[1].toUpperCase(); suf = std[2]; kind = (G.N === 3 && std[1] !== letter) ? 'wide' : 'face'; }
+    else return m;
     var t = suf === '' ? T('im Uhrzeigersinn') : (suf.indexOf('2') >= 0 ? T('halbe Umdrehung') : T('gegen den Uhrzeigersinn'));
-    if (!mm) return m;
-    var face = T(FACE_DE[mm[2].toUpperCase()]);
-    if (mm[1]) return T('Zweite Schicht von {0}', [face]) + ', ' + t;
-    if (mm[2] !== mm[2].toUpperCase()) return T('{0}, zwei Schichten', [face]) + ', ' + t;
+    var face = T(FACE_DE[letter]);
+    if (kind === 'inner') return T('Zweite Schicht von {0}', [face]) + ', ' + t;
+    if (kind === 'wide') return T('{0}, zwei Schichten', [face]) + ', ' + t;
     return face + ', ' + t;
   }
   function algHtml(st) {
@@ -316,24 +330,24 @@
     if (st) {
       $('moveBig').textContent = st.m; $('moveDesc').textContent = describe(st.m);
       $('phaseTitle').textContent = T('Phase {0} von {1}', [st.p.no, phaseCount()]) + ': ' + pName(st.p);
-      solveView.highlight = G.faceOfMove(st.m);
+      solveView.highlight = hlSpec(G, st.m);
       if (follow && G.faceOfMove(st.m) >= 0) solveView.setViewFor(G.faceOfMove(st.m));
     } else {
       $('moveBig').textContent = T('Fertig'); $('moveDesc').textContent = T('Der Würfel ist gelöst!');
-      $('phaseTitle').textContent = T('Fertig'); solveView.highlight = -1;
+      $('phaseTitle').textContent = T('Fertig'); solveView.highlight = null;
     }
     if (modalOpen && modalKind === 'alg') $('modalText').innerHTML = algHtml(st);
     $('stepInfo').textContent = T('Zug {0} von {1}', [Math.min(idx + (st ? 1 : 0), n), n]);
-    drawNet($('netMini'), solveView.state, st ? G.faceOfMove(st.m) : -1, G.N);
+    drawNet($('netMini'), solveView.state, st ? netFace(G, st.m) : -1, G.N);
   }
   function next(cb) {
     if (solveView.isBusy() || idx >= flat.length) { auto = false; setAutoIcon('bAuto', false); return; }
-    var m = flat[idx].m; idx++; solveView.highlight = -1;
+    var m = flat[idx].m; idx++; solveView.highlight = null;
     solveView.enqueueName(m, dur(), function () { renderStep(); if (cb) cb(); });
   }
   function back() {
     if (solveView.isBusy() || idx <= 0) return;
-    idx--; solveView.highlight = -1; solveView.enqueueName(G.invertMove(flat[idx].m), dur(), renderStep);
+    idx--; solveView.highlight = null; solveView.enqueueName(G.invertMove(flat[idx].m), dur(), renderStep);
   }
   function jump(i) {
     solveView.clearQueue(); solveView.anim = null; auto = false; setAutoIcon('bAuto', false);
@@ -455,16 +469,16 @@
     $('lMoves').innerHTML = lMoves.map(function (m, j) { return '<span class="' + (j < lIdx ? 'done' : j === lIdx ? 'cur' : '') + '">' + m + '</span>'; }).join('');
     var cur = $('lMoves').children[Math.min(lIdx, lMoves.length - 1)]; if (cur) $('lMoves').scrollLeft = cur.offsetLeft - $('lMoves').clientWidth / 2;
     $('lInfo').textContent = lIdx >= lMoves.length ? T('Fertig: Die beteiligten Steine sind an ihrem Platz.') : T('Zug {0} von {1}', [lIdx + 1, lMoves.length]);
-    lessonView.highlight = lIdx < lMoves.length ? lCur.sec.lib.faceOfMove(lMoves[lIdx]) : -1;
+    lessonView.highlight = lIdx < lMoves.length ? hlSpec(lCur.sec.lib, lMoves[lIdx]) : null;
   }
   function lNext(cb) {
     if (lessonView.isBusy() || lIdx >= lMoves.length) { lAuto = false; setAutoIcon('lAuto', false); return; }
-    var m = lMoves[lIdx]; lIdx++; lessonView.highlight = -1;
+    var m = lMoves[lIdx]; lIdx++; lessonView.highlight = null;
     lessonView.enqueueName(m, dur(), function () { renderLesson(); if (cb) cb(); });
   }
   function lPrev() {
     if (lessonView.isBusy() || lIdx <= 0) return;
-    lIdx--; lessonView.highlight = -1; lessonView.enqueueName(lCur.sec.lib.invertMove(lMoves[lIdx]), dur(), renderLesson);
+    lIdx--; lessonView.highlight = null; lessonView.enqueueName(lCur.sec.lib.invertMove(lMoves[lIdx]), dur(), renderLesson);
   }
   function lJump(i) { lessonView.clearQueue(); lessonView.anim = null; lAuto = false; setAutoIcon('lAuto', false); lIdx = i; lessonView.setState(lStates[i]); renderLesson(); }
   $('lNext').onclick = function () { lAuto = false; setAutoIcon('lAuto', false); lNext(); };
@@ -570,6 +584,13 @@
     };
   });
 
+  function renderHlToggle() { var b = $('hlToggle'); b.textContent = T(hlOn ? 'An' : 'Aus'); b.classList.toggle('on', hlOn); }
+  $('hlToggle').onclick = function () {
+    hlOn = !hlOn; store.set('zauber.hl', hlOn ? '1' : '0'); renderHlToggle();
+    if (plan && !$('solvePane').hidden) renderStep();
+    if (lOpen && lCur) renderLesson();
+  };
+
   // ---------- Sprache ----------
   var FLAGS = {
     de: '<rect width="60" height="13.4" fill="#000"/><rect y="13.4" width="60" height="13.3" fill="#d00"/><rect y="26.7" width="60" height="13.3" fill="#ffce00"/>',
@@ -590,7 +611,7 @@
     I18n.setLang(el.dataset.l); store.set('zauber.lang', el.dataset.l); refreshLang();
   });
   function refreshLang() {
-    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg();
+    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle();
     $('aPause').textContent = T(autoPaused ? 'Weiter' : 'Pause');
     if (statusKey) updStatus(statusKey[0], statusKey[1]); else updStatus();
     applyDesign();
