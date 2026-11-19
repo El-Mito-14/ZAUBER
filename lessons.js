@@ -11,20 +11,20 @@
   var SECTIONS = [
     { id: 'x4', name: '4x4', kind: 'iso', lib: 4, groups: [
       { name: 'Zentren', items: [
-        L('Zentren-Dreiertausch A', "2U L 2U' 2L 2U L' 2U' 2L'", 'Tauscht drei Zentrumssteine im Kreis, alles andere bleibt. Mit kurzen Vorbereitungszügen holst du damit jeden Zentrumsstein an seinen Platz.'),
-        L('Zentren-Dreiertausch B', "2R F 2R' 2F 2R F' 2R' 2F'", 'Gleiches Prinzip mit anderen Seiten: Eine Innenschicht wird bewegt, eine Außenseite gedreht, dann wird alles zurückgedreht.'),
-        L('Zentren-Dreiertausch C', "2U' L 2U 2R2 2U' L' 2U 2R2", 'Dreht eine Innenschicht weg und holt sie von der anderen Seite zurück, so wandern drei Zentrumssteine.'),
-        L('Zentren-Dreiertausch D', "2L B 2L' 2F 2L B' 2L' 2F'", 'Dieselbe Idee an der linken und rechten Innenschicht.')
+        L('Zentren-Dreiertausch A', "u L u' l u L' u' l'", 'Tauscht drei Zentrumssteine im Kreis, alles andere bleibt. Mit kurzen Vorbereitungszügen holst du damit jeden Zentrumsstein an seinen Platz.'),
+        L('Zentren-Dreiertausch B', "r F r' f r F' r' f'", 'Gleiches Prinzip mit anderen Seiten: Eine Innenschicht wird bewegt, eine Außenseite gedreht, dann wird alles zurückgedreht.'),
+        L('Zentren-Dreiertausch C', "u' L u r2 u' L' u r2", 'Dreht eine Innenschicht weg und holt sie von der anderen Seite zurück, so wandern drei Zentrumssteine.'),
+        L('Zentren-Dreiertausch D', "l B l' f l B' l' f'", 'Dieselbe Idee an der linken und rechten Innenschicht.')
       ] },
       { name: 'Kanten paaren', items: [
-        L('Kantenpaare A', "2U L 2U' R 2U L' 2U' R'", 'Bewegt zwei Dreiergruppen von Kantenteilen gleichzeitig. Damit setzt du ein passendes Kantenteil neben sein Gegenstück.'),
-        L('Kantenpaare B', "2L B 2L' F 2L B' 2L' F'", 'Gleiches Prinzip an den Seiten links, hinten und vorne.'),
-        L('Kantenpaare C', "2R' U' 2R D 2R' U 2R D'", 'Gleiches Prinzip mit rechter Innenschicht.'),
-        L('Kantenpaare D', "2F D 2F' U' 2F D' 2F' U", 'Gleiches Prinzip mit vorderer Innenschicht.')
+        L('Kantenpaare A', "u L u' R u L' u' R'", 'Bewegt zwei Dreiergruppen von Kantenteilen gleichzeitig. Damit setzt du ein passendes Kantenteil neben sein Gegenstück.'),
+        L('Kantenpaare B', "l B l' F l B' l' F'", 'Gleiches Prinzip an den Seiten links, hinten und vorne.'),
+        L('Kantenpaare C', "r' U' r D r' U r D'", 'Gleiches Prinzip mit rechter Innenschicht.'),
+        L('Kantenpaare D', "f D f' U' f D' f' U", 'Gleiches Prinzip mit vorderer Innenschicht.')
       ] },
       { name: 'Parität', items: [
-        L('OLL-Parität', "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2", 'Behebt den Fall, dass bei der letzten Ebene eine einzelne Kante falsch herum steht (beim 3x3 unmöglich). Die Kante wird umgedreht, alles andere bleibt.'),
-        L('PLL-Parität', "2R2 U2 2R2 u2 2R2 2U2", 'Behebt den Fall, dass zwei Kanten vertauscht werden müssen (beim 3x3 unmöglich). Vertauscht zwei Kantenpaare, alles andere bleibt.')
+        L('OLL-Parität', "r2 B2 U2 l U2 r' U2 r U2 F2 r F2 l' B2 r2", 'Behebt den Fall, dass bei der letzten Ebene eine einzelne Kante falsch herum steht (beim 3x3 unmöglich). Die Kante wird umgedreht, alles andere bleibt.'),
+        L('PLL-Parität', "r2 U2 r2 Uu2 r2 u2", 'Behebt den Fall, dass zwei Kanten vertauscht werden müssen (beim 3x3 unmöglich). Vertauscht zwei Kantenpaare, alles andere bleibt.')
       ] }
     ] },
     { id: 'basic', name: 'Anfänger', kind: 'iso', groups: [

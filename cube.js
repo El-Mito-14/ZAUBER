@@ -54,7 +54,19 @@
     }
     var coords = []; for (var i0 = 0; i0 < N; i0++) coords.push(i0 - m);
     function moveToLayer(name) {
-      var t = name.replace(/[()]/g, ''), mm = /^(\d?)([UDLRFBudlrfbMESxyz])(.*)$/.exec(t);
+      var t = name.replace(/[()]/g, '');
+      if (N === 4) {
+        // 4x4-Notation: R = äußere Schicht, Rr (oder Rw) = äußere zwei Schichten, r = nur die innere (zweite) Schicht, x y z = ganzer Würfel
+        var w4 = /^([UDLRFB])([udlrfbw])(.*)$/.exec(t), o4 = /^([UDLRFB])(.*)$/.exec(t), i4 = /^([udlrfb])(.*)$/.exec(t), r4 = /^([xyz])(.*)$/.exec(t), g, suf4, cs4, k4, dir4;
+        if (w4 && (w4[2] === 'w' || w4[2] === w4[1].toLowerCase())) { g = w4[1]; suf4 = w4[3]; k4 = FACE_AXIS[g][0]; cs4 = [FACE_AXIS[g][1] * m, FACE_AXIS[g][1] * (m - 1)]; dir4 = -FACE_AXIS[g][1]; }
+        else if (o4) { g = o4[1]; suf4 = o4[2]; k4 = FACE_AXIS[g][0]; cs4 = [FACE_AXIS[g][1] * m]; dir4 = -FACE_AXIS[g][1]; }
+        else if (i4) { g = i4[1].toUpperCase(); suf4 = i4[2]; k4 = FACE_AXIS[g][0]; cs4 = [FACE_AXIS[g][1] * (m - 1)]; dir4 = -FACE_AXIS[g][1]; }
+        else if (r4) { k4 = { x: 0, y: 1, z: 2 }[r4[1]]; suf4 = r4[2]; cs4 = coords.slice(); dir4 = -1; }
+        else throw new Error('Unbekannter Zug: ' + name);
+        var am4 = suf4.indexOf('2') >= 0 ? 2 : (suf4.indexOf("'") >= 0 ? 3 : 1), st4 = (((dir4 * am4) % 4) + 4) % 4; if (st4 === 3) st4 = -1;
+        return { k: k4, cs: cs4, c: cs4[0], steps: st4, name: t };
+      }
+      var mm = /^(\d?)([UDLRFBudlrfbMESxyz])(.*)$/.exec(t);
       if (!mm) throw new Error('Unbekannter Zug: ' + name);
       var dig = mm[1] ? +mm[1] : 0, base = mm[2], suf = mm[3];
       var amt = suf.indexOf('2') >= 0 ? 2 : (suf.indexOf("'") >= 0 ? 3 : 1), k, cs, dir, up = base.toUpperCase();

@@ -11,13 +11,14 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="topbar"><button id="gearBtn" aria-label="Einstellungen" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button></div>
+
 <main>
   <!-- Funktion 1: 3D-Würfel -->
   <section id="screen-cube" class="screen active">
     <div class="stage grow">
       <canvas id="cube3d"></canvas>
       <button class="info" data-info="cube" aria-label="i">i</button>
+      <button class="gear" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button>
       <div class="overlay" id="cubeStatus"></div>
     </div>
     <div id="autoBar" class="row" hidden>
@@ -25,10 +26,10 @@
       <button id="aStop" data-t>Stopp</button>
       <button id="spdCube" class="spdBtn"></button>
     </div>
-    <div class="seg" id="modeSeg">
-      <button data-m="free" class="on" data-t>Frei</button>
-      <button data-m="view" data-t>Nur Ansicht</button>
-      <button data-m="layer" data-t>Nur Ebenen</button>
+    <div class="seg modes" id="modeSeg">
+      <button data-m="free" data-ta="Frei" class="on"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#22a455" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#22a455" stroke="#22a455" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#22a455" d="M8 28Q20 35 31 28.4"/><path class="hd" fill="#22a455" stroke="#22a455" d="M32.4 27.6L28.6 29.6L27.7 26Z"/></svg></button>
+      <button data-m="view" data-ta="Nur Ansicht"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#e03131" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#e03131" stroke="#e03131" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#22a455" d="M8 28Q20 35 31 28.4"/><path class="hd" fill="#22a455" stroke="#22a455" d="M32.4 27.6L28.6 29.6L27.7 26Z"/></svg></button>
+      <button data-m="layer" data-ta="Nur Ebenen"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#22a455" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#22a455" stroke="#22a455" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#e03131" d="M8 28Q20 35 31 28.4"/><path class="hd" fill="#e03131" stroke="#e03131" d="M32.4 27.6L28.6 29.6L27.7 26Z"/></svg></button>
     </div>
     <div class="row">
       <button id="btnScramble" data-t>Mischen</button>
@@ -43,12 +44,13 @@
     <div id="inputPane" class="pane">
       <div class="stage grow">
         <canvas id="preview3d"></canvas>
+        <button class="info" data-info="input" aria-label="i">i</button>
+        <button class="gear" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button>
         <div class="palbar" id="palette" hidden></div>
         <div class="overlay" id="inToast"></div>
       </div>
       <div id="errBox" class="err" hidden></div>
       <div class="row">
-        <button class="infoBtn" data-info="input" aria-label="i">i</button>
         <button id="btnClear" data-t>Leeren</button>
         <button id="btnFromCube" data-t>Vom 3D-Würfel</button>
         <button id="btnCompute" class="primary" data-t>Lösung berechnen</button>
@@ -56,9 +58,11 @@
     </div>
 
     <div id="solvePane" class="pane" hidden>
-      <div class="topRow"><div id="phaseTitle"></div><button class="infoBtn" id="btnPhaseInfo" aria-label="i">i</button></div>
       <div class="stage grow">
         <canvas id="solve3d"></canvas>
+        <button class="info" id="btnPhaseInfo" aria-label="i">i</button>
+        <button class="gear" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button>
+        <div id="phaseTitle" class="phaseOv"></div>
         <canvas id="netMini" class="netOv"></canvas>
       </div>
       <div class="moveRow">
@@ -85,11 +89,11 @@
   <!-- Lektionen -->
   <section id="screen-lessons" class="screen">
     <div id="lessonListWrap">
-      <div class="seg" id="lessonTabs"></div>
+      <div class="tabsRow"><div class="seg" id="lessonTabs"></div><button class="gear inline" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button></div>
       <div id="lessonList"></div>
     </div>
     <div id="lessonDetail" class="pane" hidden>
-      <div class="topRow"><button id="lBack" data-t>Zurück</button><div id="lTitle" class="ltitle"></div><button class="infoBtn" id="btnLInfo" aria-label="i">i</button></div>
+      <div class="topRow"><button id="lBack" data-t>Zurück</button><div id="lTitle" class="ltitle"></div><button class="infoBtn" id="btnLInfo" aria-label="i">i</button><button class="gear inline" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button></div>
       <div class="stage grow">
         <canvas id="lesson3d"></canvas>
         <div class="ovThumb left"><canvas id="lBefore" class="thumb"></canvas><span data-t>Vorher</span></div>
@@ -121,6 +125,8 @@
       <div class="accBody">
         <div class="seg" id="sizeSeg"><button data-n="3">3x3</button><button data-n="4">4x4</button></div>
         <p class="lDesc" data-t>Wähle, ob du mit dem 3x3- oder dem 4x4-Würfel arbeiten möchtest. Das gilt für Würfel, Lösen und Lektionen.</p>
+        <div class="optRow"><span data-t>Gedrehte Ebene hervorheben</span><button id="hlToggle" class="toggle"></button></div>
+        <p class="lDesc" data-t>Beim Abspielen von Lösung und Lektionen wird die Ebene, die gedreht wird, rot umrandet.</p>
       </div>
     </div>
     <div class="acc" id="acc-lang">

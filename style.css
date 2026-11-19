@@ -3,10 +3,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none;overflow:hidden}
 body{display:flex;flex-direction:column;height:100dvh}
-#topbar{flex:none;display:flex;justify-content:flex-end;padding:calc(env(safe-area-inset-top) + 2px) 10px 0}
-#gearBtn{width:34px;height:30px;padding:0;border:0;background:transparent;color:var(--ink)}
-#gearBtn svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-linecap:butt}
-main{flex:1;min-height:0;overflow:hidden;padding:2px 10px 6px;display:flex;flex-direction:column}
+main{flex:1;min-height:0;overflow:hidden;padding:calc(env(safe-area-inset-top) + 6px) 10px 6px;display:flex;flex-direction:column}
 .screen{display:none}
 .screen.active{display:flex;flex-direction:column;flex:1;min-height:0}
 .pane{display:flex;flex-direction:column;flex:1;min-height:0}
@@ -119,3 +116,25 @@ h2{font-size:17px;margin:4px 2px}
 .spdRow.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .spdRow.on svg{stroke:var(--on-accent)}
 .spdTitle{font-weight:700;font-size:16px;margin-bottom:2px}
+
+.gear{position:absolute;top:8px;right:8px;width:28px;height:28px;padding:0;border-radius:50%;background:var(--bg);border:1px solid var(--line);z-index:3;color:var(--ink)}
+.gear svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-linecap:butt;display:block;margin:auto}
+.gear.inline{position:static;flex:0 0 34px;width:34px;height:34px}
+.tabsRow{display:flex;gap:8px;align-items:center;position:sticky;top:0;background:var(--bg);z-index:2;padding-bottom:4px}
+.tabsRow .seg{flex:1;margin:0;position:static;padding:0}
+#lessonListWrap .tabsRow .seg{position:static}
+.stage.pal .info,.stage.pal .gear{display:none}
+.phaseOv{position:absolute;top:8px;left:44px;right:44px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:2;pointer-events:none;text-align:center}
+.stage>canvas.netOv{top:44px}
+.moveRow{height:54px;overflow:hidden}
+.moveCol{height:100%;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.moveDesc{font-size:12px;line-height:1.2;max-height:2.4em;overflow:hidden}
+.move{min-width:76px;height:40px;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.seg.modes button{padding:3px 2px;height:58px;display:flex;align-items:center;justify-content:center}
+.seg.modes button.on{background:var(--soft);border:2px solid var(--accent)}
+.seg.modes svg{height:50px;width:auto;display:block}
+.seg.modes .cb{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.seg.modes .ln{fill:none;stroke-width:2.2;stroke-linecap:round}
+.seg.modes .hd{stroke-width:1;stroke-linejoin:round}
+.optRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:14px}
+.optRow .toggle{flex:0 0 auto;min-width:72px;padding:8px 14px}

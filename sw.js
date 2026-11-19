@@ -1,4 +1,4 @@
-const CACHE = 'zauber-v7';
+const CACHE = 'zauber-v8';
 const FILES = ['./', 'index.html', 'style.css', 'cube.js', 'solver.js', 'solver4.js', 'i18n.js', 'lessons.js', 'thumbs.js', 'render.js', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
