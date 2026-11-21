@@ -23,7 +23,7 @@
   };
   var SPD_IC = {
     vslow: '<svg viewBox="0 0 32 32"><circle cx="19" cy="14" r="8"/><circle cx="19" cy="14" r="3.4"/><path d="M3 26h22.5c1.8 0 2.8-1.2 2.8-2.6"/><path d="M5 26c-2-4-1-8 2-10"/><path d="M7 16l-1.6-4M9.4 16.6l1-4"/></svg>',
-    slow: '<svg viewBox="0 0 32 32"><path d="M6 21.5C6 14.2 10.8 9 16.5 9S27 14.2 27 21.5z"/><path d="M11.5 21.5l1.6-8M21.5 21.5l-1.6-8M16.5 9.2v12M8 16.5h17"/><path d="M27 18.6c1.8-1.6 4.1-1 4.1.9 0 1.5-1.6 2.5-4.1 2"/><path d="M9.4 21.5v3.8M14 21.5v3.2M19.5 21.5v3.2M24 21.5v3.8"/><path d="M6 20.6l-3 1.6"/></svg>',
+    slow: '<svg viewBox="0 0 32 32"><path d="M5 22a11 9.5 0 0 1 22 0z"/><circle cx="28.6" cy="19.4" r="2.3"/><path d="M10 22v3.6M22 22v3.6"/></svg>',
     normal: '<svg viewBox="0 0 32 32"><circle cx="16" cy="5.6" r="2.6"/><path d="M16 9v10"/><path d="M16 11.5l-6 5M16 11.5l6 4"/><path d="M16 19l-5.5 9M16 19l5.5 9"/></svg>',
     fast: '<svg viewBox="0 0 32 32"><path d="M5 21.5c0-4.8 4-8.2 9.5-8.2 3.4 0 6.2 1 8 2.6"/><path d="M5 21.5c0 1.8 1.8 3.2 4.2 3.2h9.6c2.2 0 3.6-1.2 3.6-2.8"/><path d="M22.8 15.9c.6-1.6 2.2-2.4 3.7-2.1 1.2.2 2 1.2 2.1 2.4.1 1.4-.6 2.2-1.8 2.9-1.5.8-3.4.7-4.2-.4"/><path d="M24.8 13.6c-1.4-2.4-1.3-5.6.2-7 1.5 1.4 1.8 4.4 1.3 7.1M27.2 14c.8-2.3 2.2-4.2 3.5-4.1.5 1.8-.3 3.8-1.9 5.3"/><circle cx="4.4" cy="19.4" r="1.6"/><path d="M9.5 24.7l-3 2.6h4.2M19 24.5l3.4 2.8h-4"/></svg>',
     vfast: '<svg viewBox="0 0 32 32"><path d="M16 3c5 5 5 12 4 18h-8c-1-6-1-13 4-18z"/><circle cx="16" cy="12" r="2.2"/><path d="M12 18l-4 5 4-1M20 18l4 5-4-1"/><path d="M14 24c0 3 2 5 2 5s2-2 2-5"/></svg>'
@@ -73,6 +73,7 @@
       '<p>' + T('<b>Bedienung wählen:</b> <b>Frei</b> = nichts ist fixiert (auf dem Würfel dreht eine Schicht, daneben die Ansicht). <b>Nur Ansicht</b> = jede Wischgeste dreht nur die Ansicht. <b>Nur Ebenen</b> = die Ansicht ist fixiert, es lassen sich nur Schichten des Würfels drehen.') + '</p>' +
       '<p>' + T('<b>Mischen</b> verdreht den Würfel zufällig, <b>Zurück</b> macht den letzten Zug rückgängig, <b>Neu</b> setzt zurück.') + '</p>' +
       '<p>' + T('<b>Lösen:</b> Der Würfel löst sich selbst. Du kannst pausieren, stoppen und das Tempo ändern.') + '</p>';
+    if (kind === 'patedit') return '<p>' + T('Hier entwirfst du ein eigenes Muster: Tippe Felder an und färbe sie ein. Danach berechnet die App eine Anleitung, die den gelösten Würfel Schritt für Schritt in dein Muster verwandelt. Das klappt nur, wenn das Muster auf einem echten Würfel überhaupt möglich ist.') + '</p>' + infoHtml('input');
     return '<p>' + T('<b>So geht es:</b> Tippe ein Feld auf dem Würfel an. Oben erscheint die Farbauswahl. Tippe die passende Farbe an, dann wird das Feld eingefärbt. Bereits gefärbte Felder kannst du erneut antippen und korrigieren. Die Auswahl schließt sich, wenn du eine Farbe wählst, irgendwo anders hintippst oder die Zurück-Taste deines Handys drückst.') + '</p>' +
       '<p>' + T('<b>Ansicht drehen:</b> Wische auf dem Würfel oder daneben, um auch Unterseite und Rückseite zu erreichen.') + '</p>' +
       (G.N === 3 ? '<p>' + T('<b>Mittelsteine</b> sind fest. Halte deinen Würfel so: <b>Gelb oben, Grün vorne</b> (dann ist Orange rechts, Rot links, Blau hinten, Weiß unten).') + '</p>' : '<p>' + T('Beim 4x4 gibt es keine festen Mittelsteine: Färbe alle {0} Felder selbst ein, auch die Mitten. Du kannst den Würfel beliebig halten.', [G.SZ]) + '</p>') +
@@ -82,21 +83,22 @@
   document.querySelectorAll('[data-info]').forEach(function (b) { b.onclick = function () { openModal(infoHtml(b.dataset.info)); }; });
 
   // ---------- Tabs / Einstellungen ----------
-  var cubeView, previewView, solveView, lessonView, curTab = 'cube', settingsOpen = false;
+  var cubeView, previewView, solveView, lessonView, editView, curTab = 'cube', settingsOpen = false;
   function showTab(name) {
     curTab = name; settingsOpen = false;
-    ['cube', 'solve', 'lessons', 'settings'].forEach(function (n) { $('screen-' + n).classList.toggle('active', n === name); });
-    ['cube', 'solve', 'lessons'].forEach(function (n) { $('tab-' + n).classList.toggle('active', n === name); });
-    setTimeout(function () { [cubeView, previewView, solveView, lessonView].forEach(function (v) { v && v.resize(); }); if (!$('solvePane').hidden && name === 'solve') renderStep(); if (name === 'lessons' && !lOpen) renderLessonList(); }, 30);
+    ['cube', 'solve', 'lessons', 'patterns', 'settings'].forEach(function (n) { $('screen-' + n).classList.toggle('active', n === name); });
+    ['cube', 'solve', 'lessons', 'patterns'].forEach(function (n) { $('tab-' + n).classList.toggle('active', n === name); });
+    setTimeout(function () { [cubeView, previewView, solveView, lessonView, editView].forEach(function (v) { v && v.resize(); }); if (name === 'patterns' && $('patEdit').hidden) renderPatterns(); if (!$('solvePane').hidden && name === 'solve') renderStep(); if (name === 'lessons' && !lOpen) renderLessonList(); }, 30);
   }
   $('tab-cube').onclick = function () { showTab('cube'); };
   $('tab-solve').onclick = function () { showTab('solve'); };
   $('tab-lessons').onclick = function () { showTab('lessons'); };
+  $('tab-patterns').onclick = function () { showTab('patterns'); };
   function hideSettings() { if (!settingsOpen) return; settingsOpen = false; showTab(curTab); }
   function openSettings() {
     if (settingsOpen) return;
     settingsOpen = true;
-    ['cube', 'solve', 'lessons'].forEach(function (n) { $('screen-' + n).classList.remove('active'); $('tab-' + n).classList.remove('active'); });
+    ['cube', 'solve', 'lessons', 'patterns'].forEach(function (n) { $('screen-' + n).classList.remove('active'); $('tab-' + n).classList.remove('active'); });
     $('screen-settings').classList.add('active'); pushBack('settings', hideSettings);
     setTimeout(function () { drawRing(); updateRingBtn(); }, 30);
   }
@@ -129,6 +131,7 @@
   var undoStack = [], moves = 0;
   var autoRun = false, autoPaused = false, autoMoves = [], autoIdx = 0;
   cubeView = new CubeView($('cube3d'), { lib: G, onTurn: function (t) { undoStack.push(t); moves++; updStatus(); } });
+  cubeView.attachViewCube();
   var statusKey = null;
   function updStatus(txt, args) {
     statusKey = txt ? [txt, args] : null;
@@ -153,7 +156,7 @@
   $('btnScramble').onclick = function () {
     if (busy()) return;
     undoStack = []; moves = 0; var last = '', n = 0, pool = G.MOVE_NAMES.slice();
-    if (G.N === 4) G.FACE_NAMES.forEach(function (f) { pool.push('2' + f, "2" + f + "'", '2' + f + '2'); });
+    if (G.N === 4) G.FACE_NAMES.forEach(function (f) { var lf = f.toLowerCase(); pool.push(lf, lf + "'", lf + '2'); });
     var count = G.N === 4 ? 30 : 22;
     while (n < count) {
       var m = pool[Math.floor(Math.random() * pool.length)];
@@ -221,6 +224,7 @@
       if (!palOpen) { palOpen = true; pushBack('pal', hidePalette); }
     }
   });
+  previewView.attachViewCube();
   document.addEventListener('pointerdown', function (e) {
     if (!palOpen) return;
     if (pal.contains(e.target) || e.target === $('preview3d')) return;
@@ -241,6 +245,7 @@
 
   // ---------- Lösung abspielen ----------
   solveView = new CubeView($('solve3d'), { layerDrag: false, lib: G });
+  solveView.attachViewCube();
   var flat = [], states = [], idx = 0, auto = false, follow = false, plan = null, LABELS = S.LABELS;
   var LABELS4 = {
     centers: ['Zentren-Dreiertausch', 'Tauscht drei Zentrumssteine im Kreis, alles andere bleibt.'],
@@ -398,6 +403,7 @@
   // ---------- Lektionen ----------
   var curSec = cubeN === 4 ? 'x4' : 'basic', lMoves = [], lStates = [], lIdx = 0, lAuto = false, lOpen = false, lCur = null;
   lessonView = new CubeView($('lesson3d'), { layerDrag: false, lib: C3 });
+  lessonView.attachViewCube();
   function secById(id) { return LL.SECTIONS.filter(function (x) { return x.id === id; })[0]; }
   function firstSentence(t) { var i = t.search(/[.。](\s|$)/); return i > 0 ? t.slice(0, i) : t; }
   function cardHint(sec, it) {
@@ -415,7 +421,9 @@
   }
   function renderLessonList() {
     var tabs = $('lessonTabs'); tabs.innerHTML = '';
+    if (curSec === 'not3' && cubeN === 4) curSec = 'not4'; if (curSec === 'not4' && cubeN === 3) curSec = 'not3';
     LL.SECTIONS.forEach(function (sec) {
+      if ((sec.id === 'not3' && cubeN === 4) || (sec.id === 'not4' && cubeN === 3)) return;
       var b = document.createElement('button'); b.textContent = T(sec.name); if (sec.id === curSec) b.className = 'on';
       b.onclick = function () { curSec = sec.id; renderLessonList(); $('lessonListWrap').scrollTop = 0; };
       tabs.appendChild(b);
@@ -444,7 +452,10 @@
     else if (sec.kind === 'pll') { Thumbs.top($('lBefore'), a.full, 'pll', a.arrows); Thumbs.top($('lAfter'), C3.solvedColors(), 'pll'); }
     else { Thumbs.iso($('lBefore'), a.start, undefined, undefined, sec.lib); Thumbs.iso($('lAfter'), a.after, undefined, undefined, sec.lib); }
   }
-  function openLesson(sec, grp, it) {
+  var detailReturn = null;
+  function openLesson(sec, grp, it, ret) {
+    detailReturn = ret || null;
+    if (ret) { ['cube', 'solve', 'lessons', 'patterns', 'settings'].forEach(function (n) { $('screen-' + n).classList.toggle('active', n === 'lessons'); }); }
     var a = LL.analyze(it); lCur = { sec: sec, grp: grp, it: it }; lMoves = a.moves; lStates = [a.start];
     lessonView.setLib(sec.lib);
     lMoves.forEach(function (m, i) { lStates.push(sec.lib.applyMove(lStates[i], m)); });
@@ -462,7 +473,10 @@
       '<div class="notation">' + lCur.it.alg + '</div>' + legendHtml() +
       '<p>' + T('Farbig sind die beteiligten Steine, grau alle anderen. Rote Umrandung = Seite, die gedreht wird. Oben im Bild siehst du den Zustand vorher und nachher.') + '</p>');
   };
-  function hideLesson() { lAuto = false; lOpen = false; lessonView.clearQueue(); lessonView.anim = null; $('lessonDetail').hidden = true; $('lessonListWrap').hidden = false; renderLessonList(); }
+  function hideLesson() {
+    lAuto = false; lOpen = false; lessonView.clearQueue(); lessonView.anim = null; $('lessonDetail').hidden = true; $('lessonListWrap').hidden = false;
+    if (detailReturn) { var r = detailReturn; detailReturn = null; showTab(r); } else renderLessonList();
+  }
   function closeLesson() { if (lOpen) { hideLesson(); popBack('lesson'); } }
   $('lBack').onclick = closeLesson;
   function renderLesson() {
@@ -489,6 +503,85 @@
     if (lIdx >= lMoves.length) lJump(0);
     lAuto = true; setAutoIcon('lAuto', true);
     (function step() { if (!lAuto) return; lNext(function () { setTimeout(step, gap()); }); })();
+  };
+
+  // ---------- Muster ----------
+  var PATSEC = function () { return { id: 'pat', name: 'Muster', kind: 'iso', lib: G }; };
+  function patItems() { return G.N === 4 ? LL.PAT4 : LL.PAT3; }
+  function renderPatterns() {
+    var items = patItems(), h = '<div class="cat">' + T('Katalog') + '</div><div class="lgrid">';
+    items.forEach(function (it, i) {
+      var a = (it._a && it._a.lib === G) ? it._a : LL.analyzePattern(it, G);
+      h += '<button class="lcard" data-i="' + i + '"><canvas class="thumb"></canvas><b>' + T(it.name) + '</b><span class="sub">' + T('{0} Züge', [a.moves.length]) + '</span><small>' + it.alg + '</small></button>';
+    });
+    h += '</div>';
+    var box = $('patList'); box.innerHTML = h;
+    box.onclick = function (e) {
+      var b = e.target.closest ? e.target.closest('.lcard') : null; if (!b) return;
+      var it = items[+b.dataset.i]; LL.analyzePattern(it, G);
+      openLesson(PATSEC(), { name: 'Katalog' }, it, 'patterns');
+    };
+    setTimeout(function () {
+      box.querySelectorAll('.lcard').forEach(function (b) { Thumbs.iso(b.querySelector('canvas'), items[+b.dataset.i]._a.after, undefined, undefined, G); });
+    }, 20);
+  }
+  // Editor für eigene Muster
+  var edInp, edSel = -1, edPalOpen = false, edToastT = null, edPal = $('pePalette');
+  function edReset() { edInp = Int8Array.from(G.solvedColors()); edSel = -1; }
+  function edClear() { edInp = new Int8Array(G.SZ); edInp.fill(-1); if (G.N === 3) for (var i = 0; i < G.SZ; i++) if (G.isCenter(i)) edInp[i] = G.SCHEME[G.stickers[i].face]; edSel = -1; }
+  edReset();
+  for (var ec = 0; ec < 6; ec++) (function (c) {
+    var b = document.createElement('button'); b.className = 'sw'; b.style.background = PAL[c]; b.innerHTML = '<i></i>';
+    b.onclick = function () { if (edSel >= 0) { edInp[edSel] = c; edClose(); $('peErr').hidden = true; edRefresh(); } };
+    edPal.appendChild(b);
+  })(ec);
+  function edHide() { edSel = -1; edPalOpen = false; if (editView) editView.selected = -1; edPal.hidden = true; $('pe3d').parentNode.classList.remove('pal'); }
+  function edClose() { if (edPalOpen) { edHide(); popBack('edpal'); } }
+  function edToast(t) { $('peToast').textContent = T(t); clearTimeout(edToastT); edToastT = setTimeout(function () { $('peToast').textContent = ''; }, 2000); }
+  editView = new CubeView($('pe3d'), {
+    layerDrag: false, lib: G,
+    onTap: function (i) {
+      if (i < 0) { edClose(); return; }
+      if (G.N === 3 && G.isCenter(i)) { edClose(); edToast('Mittelsteine sind fest.'); return; }
+      edSel = i; editView.selected = i; edPal.hidden = false; $('pe3d').parentNode.classList.add('pal');
+      if (!edPalOpen) { edPalOpen = true; pushBack('edpal', edHide); }
+    }
+  });
+  editView.attachViewCube();
+  document.addEventListener('pointerdown', function (e) {
+    if (!edPalOpen) return;
+    if (edPal.contains(e.target) || e.target === $('pe3d')) return;
+    edClose();
+  }, true);
+  function edRefresh() {
+    var cnt = [0, 0, 0, 0, 0, 0];
+    for (var i = 0; i < G.SZ; i++) if (edInp[i] >= 0) cnt[edInp[i]]++;
+    for (var c2 = 0; c2 < 6; c2++) { var b = edPal.children[c2].firstChild; b.textContent = cnt[c2] + '/' + G.N * G.N; b.className = cnt[c2] === G.N * G.N ? 'ok' : (cnt[c2] > G.N * G.N ? 'bad' : ''); }
+    editView.setState(edInp);
+  }
+  edRefresh();
+  $('patNew').onclick = function () { $('patListWrap').hidden = true; $('patEdit').hidden = false; setTimeout(function () { editView.resize(); }, 30); };
+  function edLeave() { edClose(); $('patEdit').hidden = true; $('patListWrap').hidden = false; renderPatterns(); }
+  $('peBack').onclick = edLeave;
+  $('peReset').onclick = function () { edClose(); edReset(); $('peErr').hidden = true; edRefresh(); };
+  $('peClear').onclick = function () { edClose(); edClear(); $('peErr').hidden = true; edRefresh(); };
+  $('peCompute').onclick = function () {
+    var err = $('peErr'); err.hidden = true; edClose();
+    $('peCompute').textContent = T('Berechne ...'); $('peCompute').disabled = true;
+    setTimeout(function () {
+      var r;
+      try { r = solveAny(Array.prototype.slice.call(edInp)); } catch (e) { r = { ok: false, error: 'Unerwarteter Fehler bei der Berechnung.' }; }
+      $('peCompute').textContent = T('Anleitung berechnen'); $('peCompute').disabled = false;
+      if (!r.ok) { err.textContent = errText(r); err.hidden = false; return; }
+      var all = []; r.phases.forEach(function (p) { all = all.concat(p.moves); });
+      if (!all.length) { err.textContent = T('Das ist der gelöste Würfel - es gibt nichts zu bauen.'); err.hidden = false; return; }
+      var build = G.invertMoves(all), made = G.applyMoves(G.solvedColors(), build), same = true;
+      for (var i = 0; i < G.SZ; i++) if (made[i] !== edInp[i]) { same = false; break; }
+      if (!same) { err.textContent = T('Für dieses Muster konnte keine Anleitung berechnet werden.'); err.hidden = false; return; }
+      var it = { name: 'Eigenes Muster', alg: build.join(' '), desc: 'Diese Anleitung verwandelt den gelösten Würfel in dein Muster.' };
+      LL.analyzePattern(it, G, build, Uint8Array.from(edInp));
+      openLesson(PATSEC(), { name: 'Eigenes Muster' }, it, 'patterns');
+    }, 40);
   };
 
   // ---------- Design: Hell/Dunkel + Akzentfarbe ----------
@@ -578,8 +671,9 @@
       stopAuto(); cubeView.setLib(G); previewView.setLib(G); solveView.setLib(G);
       undoStack = []; moves = 0; updStatus();
       closePalette(); clearInput(); refreshInput(); $('errBox').hidden = true;
+      edClose(); editView.setLib(G); edReset(); edRefresh(); $('peErr').hidden = true; renderPatterns();
       auto = false; plan = null; $('solvePane').hidden = true; $('inputPane').hidden = false;
-      curSec = n === 4 ? 'x4' : (curSec === 'x4' ? 'basic' : curSec);
+      curSec = n === 4 ? (curSec === 'not3' ? 'not4' : curSec === 'basic' ? 'x4' : curSec) : (curSec === 'x4' ? 'basic' : curSec === 'not4' ? 'not3' : curSec);
       renderSizeSeg();
     };
   });
@@ -617,6 +711,7 @@
     applyDesign();
     if (plan && !$('solvePane').hidden) renderStep();
     if (lOpen && lCur) { $('lTitle').textContent = T(lCur.it.name); renderLesson(); } else if ($('screen-lessons').classList.contains('active')) renderLessonList();
+    if ($('patEdit').hidden) renderPatterns();
   }
   I18n.setLang(store.get('zauber.lang') || 'de');
   refreshLang();

@@ -110,6 +110,30 @@
     </div>
   </section>
 
+  <!-- Muster -->
+  <section id="screen-patterns" class="screen">
+    <div id="patListWrap">
+      <div class="tabsRow"><button id="patNew" class="primary" data-t>Eigenes Muster erstellen</button><button class="gear inline" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button></div>
+      <div id="patList"></div>
+    </div>
+    <div id="patEdit" class="pane" hidden>
+      <div class="stage grow">
+        <canvas id="pe3d"></canvas>
+        <button class="info" data-info="patedit" aria-label="i">i</button>
+        <button class="gear" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button>
+        <div class="palbar" id="pePalette" hidden></div>
+        <div class="overlay" id="peToast"></div>
+      </div>
+      <div id="peErr" class="err" hidden></div>
+      <div class="row">
+        <button id="peBack" data-t>Zurück</button>
+        <button id="peReset" data-t>Gelöster Würfel</button>
+        <button id="peClear" data-t>Leeren</button>
+        <button id="peCompute" class="primary" data-t>Anleitung berechnen</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Einstellungen -->
   <section id="screen-settings" class="screen">
     <div class="topRow"><button id="setBack" data-t>Zurück</button><div class="ltitle" data-t>Einstellungen</div><span class="spacer"></span></div>
@@ -118,6 +142,8 @@
       <div class="accBody">
         <div class="row"><button id="themeBtn" class="themeBtn"></button></div>
         <div class="ringWrap"><canvas id="ring"></canvas><button id="ringOk" data-t>Fertig</button></div>
+        <div class="optRow"><span data-t>Gedrehte Ebene hervorheben</span><button id="hlToggle" class="toggle"></button></div>
+        <p class="lDesc" data-t>Beim Abspielen von Lösung und Lektionen wird die Ebene, die gedreht wird, rot umrandet.</p>
       </div>
     </div>
     <div class="acc" id="acc-cube">
@@ -125,8 +151,6 @@
       <div class="accBody">
         <div class="seg" id="sizeSeg"><button data-n="3">3x3</button><button data-n="4">4x4</button></div>
         <p class="lDesc" data-t>Wähle, ob du mit dem 3x3- oder dem 4x4-Würfel arbeiten möchtest. Das gilt für Würfel, Lösen und Lektionen.</p>
-        <div class="optRow"><span data-t>Gedrehte Ebene hervorheben</span><button id="hlToggle" class="toggle"></button></div>
-        <p class="lDesc" data-t>Beim Abspielen von Lösung und Lektionen wird die Ebene, die gedreht wird, rot umrandet.</p>
       </div>
     </div>
     <div class="acc" id="acc-lang">
@@ -139,6 +163,7 @@
   <button id="tab-cube" class="active" data-t>Würfel</button>
   <button id="tab-solve" data-t>Lösen</button>
   <button id="tab-lessons" data-t>Lektionen</button>
+  <button id="tab-patterns" data-t>Muster</button>
 </nav>
 <div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide" data-t>OK</button></div></div>
 <script src="cube.js"></script>
