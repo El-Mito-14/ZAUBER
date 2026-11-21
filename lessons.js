@@ -8,7 +8,35 @@
   var TRIG = "R U R' U'";
   function L(name, alg, desc) { return { name: name, alg: alg, desc: desc || '' }; }
 
-  var SECTIONS = [
+  var FD = { U: 'Oben', D: 'Unten', L: 'Links', R: 'Rechts', F: 'Vorne', B: 'Hinten' };
+  var T_CW = 'Außenseite {0}: eine Viertelumdrehung im Uhrzeigersinn (mit Blick direkt auf diese Seite).';
+  var T_CCW = "Außenseite {0}: eine Viertelumdrehung gegen den Uhrzeigersinn. Der Apostroph bedeutet gegen den Uhrzeigersinn.";
+  var T_HALF = 'Außenseite {0}: eine halbe Umdrehung. Die 2 bedeutet zweimal, die Richtung ist egal.';
+  var T_WIDE = '{0} und die Schicht dahinter gemeinsam im Uhrzeigersinn drehen (zwei Schichten).';
+  var T_INNER = 'Nur die zweite Schicht von {0} drehen (nicht die Außenseite).';
+  function N(tok, tpl, arg) { return { name: tok, alg: tok, tpl: [tpl].concat(arg ? [FD[arg]] : []) }; }
+  function faces(map, tpl) { return 'UDLRFB'.split('').map(function (f) { return N(map(f), tpl, f); }); }
+  var NOT3 = { id: 'not3', name: 'Notation', kind: 'iso', lib: 3, groups: [
+    { name: 'Außenseiten', items: faces(function (f) { return f; }, T_CW) },
+    { name: 'Richtungen', items: [N("R", T_CW, 'R'), N("R'", T_CCW, 'R'), N('R2', T_HALF, 'R')] },
+    { name: 'Zwei Schichten', items: faces(function (f) { return f.toLowerCase(); }, T_WIDE) },
+    { name: 'Mittelschichten', items: [
+      { name: 'M', alg: 'M', tpl: ['Die mittlere Schicht zwischen Links und Rechts, in Richtung von L.'] },
+      { name: 'E', alg: 'E', tpl: ['Die mittlere Schicht zwischen Oben und Unten, in Richtung von D.'] },
+      { name: 'S', alg: 'S', tpl: ['Die mittlere Schicht zwischen Vorne und Hinten, in Richtung von F.'] }] },
+    { name: 'Würfeldrehung', items: [
+      { name: 'x', alg: 'x', tpl: ['Den ganzen Würfel drehen wie die Seite {0} (nur die Blickrichtung ändert sich, die Teile bleiben zusammen).', FD.R] },
+      { name: 'y', alg: 'y', tpl: ['Den ganzen Würfel drehen wie die Seite {0} (nur die Blickrichtung ändert sich, die Teile bleiben zusammen).', FD.U] },
+      { name: 'z', alg: 'z', tpl: ['Den ganzen Würfel drehen wie die Seite {0} (nur die Blickrichtung ändert sich, die Teile bleiben zusammen).', FD.F] }] }
+  ] };
+  var NOT4 = { id: 'not4', name: 'Notation', kind: 'iso', lib: 4, groups: [
+    { name: 'Außenseiten', items: faces(function (f) { return f; }, T_CW) },
+    { name: 'Richtungen', items: [N("R", T_CW, 'R'), N("R'", T_CCW, 'R'), N('R2', T_HALF, 'R')] },
+    { name: 'Zwei Außenschichten', items: faces(function (f) { return f + f.toLowerCase(); }, T_WIDE) },
+    { name: 'Innere Schicht', items: faces(function (f) { return f.toLowerCase(); }, T_INNER) },
+    { name: 'Würfeldrehung', items: NOT3.groups[4].items }
+  ] };
+  var SECTIONS = [NOT3, NOT4,
     { id: 'x4', name: '4x4', kind: 'iso', lib: 4, groups: [
       { name: 'Zentren', items: [
         L('Zentren-Dreiertausch A', "u L u' l u L' u' l'", 'Tauscht drei Zentrumssteine im Kreis, alles andere bleibt. Mit kurzen Vorbereitungszügen holst du damit jeden Zentrumsstein an seinen Platz.'),
@@ -156,6 +184,17 @@
   var st = C.stickers;
   function topLayer(i) { return st[i].p[1] === 1; }
   function inSlot(i) { var p = st[i].p; return (p[0] === 1 && p[1] === -1 && p[2] === 1) || (p[0] === 1 && p[1] === 0 && p[2] === 1); }
+  function analyzeNot(it) {
+    var Lb = it._n === 4 ? C4 : C, l = Lb.moveToLayer(it.alg), solved = Lb.solvedColors(), gray = new Uint8Array(Lb.SZ), moved = [];
+    for (var j = 0; j < Lb.SZ; j++) { var inL = l.cs.indexOf(Lb.stickers[j].p[l.k]) >= 0; gray[j] = inL ? solved[j] : 6; if (inL) moved.push(j); }
+    it._a = { lib: Lb, moves: [it.alg], start: gray, full: solved, after: Lb.applyMove(gray, it.alg), moved: moved, rot: false, arrows: [], yBefore: 0, inU: false, inF2L: false, uKept: true };
+    return it._a;
+  }
+  function analyzePattern(it, lib, moves, finalState) {
+    var Lb = lib, mv = moves || Lb.parseAlg(it.alg), solved = Lb.solvedColors();
+    it._a = { lib: Lb, moves: mv, start: solved, full: solved, after: finalState || Lb.applyMoves(solved, mv), moved: [1], rot: false, arrows: [], yBefore: 0, inU: false, inF2L: false, uKept: true };
+    return it._a;
+  }
   function analyze4(it) {
     var Lb = C4, moves = Lb.parseAlg(it.alg), total = mkId(Lb.SZ);
     moves.forEach(function (m) { total = comp(total, Lb.permOfMove(m)); });
@@ -167,6 +206,7 @@
   }
   function analyze(it) {
     if (it._a) return it._a;
+    if (it._kind === 'not') return analyzeNot(it);
     if (it._n === 4) return analyze4(it);
     var moves = C.parseAlg(it.alg), total = identity;
     moves.forEach(function (m) { total = comp(total, C.permOfMove(m)); });
@@ -207,6 +247,8 @@
     tr = tr || function (t, a) { return (a || []).reduce(function (x, v, i) { return x.replace('{' + i + '}', v); }, t); };
     var a = analyze(it), i = a.info, parts = [];
     if (sec.id === 'x4') return tr(it.desc);
+    if (sec.id === 'not3' || sec.id === 'not4') return tr(it.tpl[0], it.tpl.slice(1).map(function (x) { return tr(x); }));
+    if (sec.id === 'pat') return tr(it.desc || '');
     if (sec.id === 'oll') return tr('Macht die Oberseite komplett gelb (vorher {0} von 9 Feldern gelb).', [a.yBefore]);
     var ce = cycles(i.eMap), cc = cycles(i.cMap);
     function txt(cy, kind) {
@@ -228,13 +270,28 @@
   }
   function validFor(sec, it) {
     var a = analyze(it);
-    if (sec.id === 'x4') return a.moved.length > 0;
+    if (sec.id === 'x4' || sec.id === 'not3' || sec.id === 'not4') return a.moved.length > 0;
     if (sec.id === 'oll') return a.inU && a.moved.length > 0;
     if (sec.id === 'pll') return a.inU && a.uKept && a.moved.length > 0;
     if (sec.id === 'f2l') return a.inF2L && a.moved.length > 0;
     return a.moved.length > 0;
   }
-  SECTIONS.forEach(function (sec) { sec.lib = sec.lib === 4 ? C4 : C; sec.groups.forEach(function (g) { g.items.forEach(function (it) { it._n = sec.lib.N; }); }); });
-  var api = { SECTIONS: SECTIONS, analyze: analyze, summary: summary, validFor: validFor };
+  SECTIONS.forEach(function (sec) { sec.lib = sec.lib === 4 ? C4 : C; sec.groups.forEach(function (g) { g.items.forEach(function (it) { it._n = sec.lib.N; it._kind = sec.id.indexOf('not') === 0 ? 'not' : ''; }); }); });
+  var PAT3 = [
+    L('Schachbrett', 'R2 L2 U2 D2 F2 B2', 'Auf jeder Seite wechseln sich zwei Farben wie auf einem Schachbrett ab.'),
+    L('Superflip', "U R2 F B R B2 R U2 L B2 R U' D' R2 F R' L B2 U2 F2", 'Alle Teile sind am richtigen Platz, aber jede Kante ist umgedreht. Das schwerste Muster: Es braucht mindestens 20 Züge.'),
+    L('Vier Punkte', "F2 B2 U D' R2 L2 U D'", 'Vier Seiten haben einen farbigen Punkt in der Mitte, die Gegenfarbe füllt den Rest. Oben und unten bleiben einfarbig.'),
+    L('Würfel im Würfel', "F L F U' R U F2 L2 U' L' B D' B' L2 U", 'Es sieht aus, als steckte ein kleinerer Würfel im Würfel.'),
+    L('Würfel im Würfel im Würfel', "U' L' U' F' R2 B' R F U B2 U B' L U' F U R F'", 'Noch eine Stufe weiter: ein Würfel im Würfel im Würfel.'),
+    L('Streifen', "F U F R L2 B D' R D2 L D' B R2 L F U F", 'Auf den Seiten laufen senkrechte Streifen in drei Farben.'),
+    L('Tetris', "L R F B U' D' L' R'", 'Die Seiten zeigen Formen wie Tetris-Steine.'),
+    L('Python', "F2 R' B' U R' L F' L F' B D' R B L2", 'Ein Muster aus Streifen und Blöcken, das an eine Schlange erinnert.'),
+    L('Twister', "F R' U L F' L' F U' R U L' U' L F'", 'Ein bekanntes verdrehtes Muster mit hoher Symmetrie.'),
+    L('Anaconda', "L U B' U' R L' B R' F B' D R D' F'", 'Ein bekanntes Muster mit schlangenartigen Farbbändern.')
+  ];
+  var PAT4 = [
+    L('Schachbrett', 'R2 L2 U2 D2 F2 B2', 'Auf jeder Seite wechseln sich zwei Farben wie auf einem Schachbrett ab.')
+  ];
+  var api = { SECTIONS: SECTIONS, analyze: analyze, analyzePattern: analyzePattern, PAT3: PAT3, PAT4: PAT4, summary: summary, validFor: validFor };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.LessonLib = api;
 })(typeof window !== 'undefined' ? window : this);

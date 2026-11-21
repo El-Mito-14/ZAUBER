@@ -60,9 +60,9 @@
     if (this.target) {
       var dy = this.target[0] - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       this.yaw += dy * 0.14; this.pitch += (this.target[1] - this.pitch) * 0.14;
-      if (Math.abs(dy) < 0.003 && Math.abs(this.target[1] - this.pitch) < 0.003) this.target = null;
+      if (Math.abs(dy) < 0.003 && Math.abs(this.target[1] - this.pitch) < 0.003) { if (this.exact) { this.yaw = this.target[0]; this.pitch = this.target[1]; } this.target = null; this.exact = false; }
     }
-    this.draw();
+    this.draw(); this.drawVC();
   };
   P.finish = function () {
     var a = this.anim, steps = Math.round(a.to / (Math.PI / 2));
@@ -117,7 +117,7 @@
         polys.push({ pts: mk(H, H), d: dist, c: BODY, body: true, hit: outer ? { p: p, n: n } : null });
         if (outer) {
           var fi = G.indexMap[G.key(p, n)], col = state[fi];
-          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, idx: fi, sel: selected === fi, face: G.stickers[fi].face, hl: !!highlight && highlight.cs.indexOf(p[highlight.k]) >= 0 && (n[highlight.k] !== 0 || Math.abs(p[highlight.k]) < mm - 0.01), px: scale });
+          polys.push({ pts: mk(SH, H + 0.004), d: dist - 0.02, c: col < 6 ? PALETTE[col] : GRAY, sticker: true, idx: fi, sel: selected === fi, face: G.stickers[fi].face, hl: !!highlight && highlight.cs.indexOf(p[highlight.k]) >= 0, px: scale });
         }
       }
     }
@@ -139,6 +139,50 @@
   }
   P.draw = function () {
     this.polys = paintCube(this.ctx, this.W, this.H, this.dpr, this.state, this.yaw, this.pitch, this.anim, this.highlight, this.selected, this.G);
+  };
+
+
+  // ---- Ansichtswürfel (kleiner Würfel unten rechts, dreht sich mit; Tipp auf eine Seite richtet den Würfel aus) ----
+  var VC_TARGETS = [[0, Math.PI / 2], [-Math.PI / 2, 0], [0, 0], [0, -Math.PI / 2], [Math.PI / 2, 0], [Math.PI, 0]];
+  var VC_LETTERS = ['U', 'R', 'F', 'D', 'L', 'B'];
+  P.attachViewCube = function () {
+    var self = this, c = root.document.createElement('canvas'); c.className = 'vcube';
+    this.canvas.parentNode.appendChild(c); this.vc = c; this.vcPolys = []; this.vcKey = ''; this.vcDraw = null;
+    var d = root.devicePixelRatio || 1; c.width = Math.round(64 * d); c.height = Math.round(64 * d);
+    c.addEventListener('pointerdown', function (e) {
+      e.stopPropagation(); e.preventDefault();
+      var r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      for (var i = self.vcPolys.length - 1; i >= 0; i--) if (inPoly(self.vcPolys[i].pts, x, y)) { self.lookAt(self.vcPolys[i].face); break; }
+    });
+  };
+  P.lookAt = function (face) { this.target = VC_TARGETS[face].slice(); this.exact = true; };
+  P.drawVC = function () {
+    var c = this.vc; if (!c) return;
+    var de = root.document.documentElement, key = this.yaw.toFixed(3) + '|' + this.pitch.toFixed(3) + '|' + de.getAttribute('data-theme') + '|' + de.style.getPropertyValue('--accent');
+    if (key === this.vcKey) return; this.vcKey = key;
+    var d = root.devicePixelRatio || 1, ctx = c.getContext('2d'), dark = de.getAttribute('data-theme') === 'dark';
+    ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, 64, 64);
+    var cy = Math.cos(this.yaw), sy = Math.sin(this.yaw), cp = Math.cos(this.pitch), sp = Math.sin(this.pitch), S = 15.5, polys = [];
+    function view(v) { var x1 = v[0] * cy + v[2] * sy, z1 = -v[0] * sy + v[2] * cy; return [x1, v[1] * cp - z1 * sp, v[1] * sp + z1 * cp]; }
+    var N3 = C.FACE_NORMALS, f;
+    for (f = 0; f < 6; f++) {
+      var n = N3[f], a = n[0] ? 0 : n[1] ? 1 : 2, a1 = (a + 1) % 3, a2 = (a + 2) % 3, nv = view(n);
+      if (nv[2] <= 0.001) continue;
+      var pts = [], sg = [[1, 1], [1, -1], [-1, -1], [-1, 1]];
+      for (var q = 0; q < 4; q++) { var v = [n[0], n[1], n[2]]; v[a1] += sg[q][0]; v[a2] += sg[q][1]; var w = view(v); pts.push([32 + w[0] * S, 32 - w[1] * S]); }
+      polys.push({ pts: pts, face: f, z: nv[2] });
+    }
+    polys.sort(function (u, v) { return u.z - v.z; }); this.vcPolys = polys;
+    var best = polys.length ? polys[polys.length - 1].face : -1, acc = de.style.getPropertyValue('--accent') || '#d62828';
+    ctx.lineJoin = 'round';
+    polys.forEach(function (p) {
+      ctx.beginPath(); ctx.moveTo(p.pts[0][0], p.pts[0][1]); for (var i = 1; i < 4; i++) ctx.lineTo(p.pts[i][0], p.pts[i][1]); ctx.closePath();
+      ctx.fillStyle = p.face === best ? acc : (dark ? '#3a3d45' : '#e6e7eb'); ctx.fill();
+      ctx.strokeStyle = dark ? '#8d929c' : '#6b6e75'; ctx.lineWidth = 1.2; ctx.stroke();
+      var cx = 0, cyy = 0; p.pts.forEach(function (q) { cx += q[0] / 4; cyy += q[1] / 4; });
+      var sz = Math.max(7, 13 * Math.min(1, p.z + 0.25)); ctx.font = '700 ' + sz.toFixed(0) + 'px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = p.face === best ? '#fff' : (dark ? '#eceef2' : '#222427'); ctx.fillText(VC_LETTERS[p.face], cx, cyy + 0.5);
+    });
   };
 
   // ---- Bedienung ----
@@ -176,7 +220,7 @@
     d.maxMove = Math.max(d.maxMove, Math.hypot(xy[0] - d.x0, xy[1] - d.y0));
     if (d.mode === 'none') return;
     if (d.mode === 'view') {
-      this.yaw += dx * 0.01; this.pitch = Math.max(-1.4, Math.min(1.4, this.pitch + dy * 0.01)); return;
+      this.yaw += dx * 0.01; this.pitch = Math.max(-1.5708, Math.min(1.5708, this.pitch + dy * 0.01)); return;
     }
     var tx = xy[0] - d.x0, ty = xy[1] - d.y0;
     if (d.mode === 'pending') {

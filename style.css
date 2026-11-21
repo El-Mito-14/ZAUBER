@@ -138,3 +138,11 @@ h2{font-size:17px;margin:4px 2px}
 .seg.modes .hd{stroke-width:1;stroke-linejoin:round}
 .optRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:14px}
 .optRow .toggle{flex:0 0 auto;min-width:72px;padding:8px 14px}
+
+.vcube{position:absolute;right:8px;bottom:8px;width:64px;height:64px;z-index:3;touch-action:none;cursor:pointer}
+#patListWrap{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#patNew{flex:1;padding:10px 6px}
+#lessonTabs button{font-size:11px;padding:8px 1px}
+#patListWrap .tabsRow{position:sticky;top:0}
+.lcard .sub{font-weight:500;color:var(--mid);font-size:10px}
+.stage>canvas.vcube{inset:auto;right:8px;bottom:8px;width:64px;height:64px}

@@ -14,7 +14,7 @@
   // 3D-Würfel, kleine Ansicht
   function iso(canvas, state, yaw, pitch, G) {
     var p = prep(canvas); if (!p) return;
-    root.paintCube(p.ctx, p.W, p.H, p.d, state, yaw === undefined ? -0.6 : yaw, pitch === undefined ? 0.5 : pitch, null, -1, -1, G);
+    root.paintCube(p.ctx, p.W, p.H, p.d, state, yaw === undefined ? -0.6 : yaw, pitch === undefined ? 0.5 : pitch, null, null, -1, G);
   }
 
   // Ansicht von oben: Oberseite + Seitenstreifen der oberen Schicht
