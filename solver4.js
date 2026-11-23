@@ -42,13 +42,13 @@
   }
   var CB = {}, WBs = {};
   // Gemeinsame Greedy-Suche: sys = Teilsystem, state = Array der Aufkleber im Teilsystem, score(state) -> {n, ok(i)} Verlustprüfung
-  function greedy(sys, st0, scoreFn, small, big, label, limit) {
+  function greedy(sys, st0, scoreFn, small, big, label, limit, thorough) {
     var cur = st0, out = [], guard = 0;
     var levels = [{ b: small, w: words(), k: 'w2' }, { b: big, w: words(), k: 'w2' }, { b: big, w: wordsDeep(), k: 'w3' }];
     while (guard++ < limit) {
       var cs = scoreFn(cur); if (cs.total === cs.max) break;
       var best = null;
-      for (var li = 0; li < levels.length && !best; li++) {
+      for (var li = 0; li < levels.length && (!best || thorough >= 2 || (thorough === 1 && li < 2)); li++) {
         var L = levels[li], wp = wordPerms(sys, L.w, sys.n + L.k);
         for (var si = 0; si < L.w.length; si++) for (var bi = 0; bi < L.b.length; bi++) {
           var M = comp(comp(wp.sp[si], L.b[bi].p), wp.spi[si]);
@@ -64,6 +64,88 @@
       out.push({ k: label, moves: moves }); cur = best.nw;
     }
     return { state: cur, segs: out };
+  }
+  // ---------- Schnelle Zentren-Lösung: drei Stufen, jeweils kürzeste Zugfolge per Breitensuche ----------
+  var CF = null;
+  function centerTables() {
+    if (CF) return CF;
+    var packPos = [], bitOf = new Array(24), a, f, j;
+    for (a = 0; a < 3; a++) for (f = a; f < 6; f += 3) for (j = 0; j < CS.n; j++) if (st[CS.idx[j]].face === f) { bitOf[j] = packPos.length; packPos.push(j); }
+    var faceOfBit = packPos.map(function (jj) { return st[CS.idx[jj]].face; });
+    var binom = []; for (var n0 = 0; n0 <= 24; n0++) { binom[n0] = []; for (var k0 = 0; k0 <= 8; k0++) binom[n0][k0] = (k0 === 0) ? 1 : (n0 === 0 ? 0 : binom[n0 - 1][k0 - 1] + binom[n0 - 1][k0]); }
+    var POP = new Uint8Array(256); for (var pv = 1; pv < 256; pv++) POP[pv] = POP[pv >> 1] + (pv & 1);
+    var RT = [0, 1, 2].map(function (bt) { var tb = []; for (var cc = 0; cc <= 8; cc++) { var arr = new Int32Array(256); for (var vv = 0; vv < 256; vv++) { var k = cc, r = 0; for (var bp = 0; bp < 8; bp++) if (vv >> bp & 1) { k++; r += binom[bt * 8 + bp][k] || 0; } arr[vv] = r; } tb.push(arr); } return tb; });
+    function rank8(mask) { var b0 = mask & 255, b1 = (mask >> 8) & 255, b2 = (mask >> 16) & 255; return RT[0][0][b0] + RT[1][POP[b0]][b1] + RT[2][POP[b0] + POP[b1]][b2]; }
+    var idx70 = new Int16Array(256).fill(-1), c70 = 0; for (var v = 0; v < 256; v++) { var pc = 0; for (var q = 0; q < 8; q++) pc += v >> q & 1; if (pc === 4) idx70[v] = c70++; }
+    var tabs = {};
+    function moveTab(name) {
+      if (tabs[name]) return tabs[name];
+      var g = subPerm(CS, name), dest = new Array(24); // neu[j] = alt[g[j]]
+      for (var jj = 0; jj < 24; jj++) dest[bitOf[g[jj]]] = bitOf[jj];
+      var t = [new Int32Array(256), new Int32Array(256), new Int32Array(256)];
+      for (var bt = 0; bt < 3; bt++) for (var val = 0; val < 256; val++) { var o = 0; for (var bb = 0; bb < 8; bb++) if (val >> bb & 1) o |= 1 << dest[bt * 8 + bb]; t[bt][val] = o; }
+      return (tabs[name] = t);
+    }
+    function app(t, m) { return t[0][m & 255] | t[1][(m >> 8) & 255] | t[2][(m >> 16) & 255]; }
+    function names(kind) {
+      var out = [];
+      FACES.forEach(function (fc) { SFX.forEach(function (sf) { out.push(fc + sf); }); });
+      FACES.forEach(function (fc) {
+        var lc = fc.toLowerCase();
+        SFX.forEach(function (sf) {
+          if (kind === 1) out.push(lc + sf);
+          else if (kind === 2) { if ((lc === 'u' || lc === 'd') || sf === '2') out.push(lc + sf); }
+          else if (sf === '2') out.push(lc + sf);
+        });
+      });
+      return out;
+    }
+    function bfs(kind, goal, keyFn) {
+      var mv = names(kind).map(function (nm) { return { name: nm, t: moveTab(nm) }; }), dist = keyFn.size ? new Uint8Array(keyFn.size).fill(255) : null, map = dist ? null : new Map();
+      var queue = [goal], head = 0;
+      function get(m) { return dist ? dist[keyFn(m)] : (map.has(m) ? map.get(m) : 255); }
+      function set(m, d) { if (dist) dist[keyFn(m)] = d; else map.set(m, d); }
+      set(goal, 0);
+      while (head < queue.length) {
+        var cur = queue[head++], d = get(cur);
+        for (var i = 0; i < mv.length; i++) { var nm2 = app(mv[i].t, cur); if (get(nm2) === 255) { set(nm2, d + 1); queue.push(nm2); } }
+      }
+      return { mv: mv, get: get };
+    }
+    function k1(m) { return rank8(m); } k1.size = binom[24][8];
+    function k3(m) { return (idx70[m & 255] * 70 + idx70[(m >> 8) & 255]) * 70 + idx70[(m >> 16) & 255]; } k3.size = 70 * 70 * 70;
+    var goal1 = 0, goal2 = 0, goal3 = 0;
+    for (var b = 0; b < 24; b++) { var fb = faceOfBit[b]; if (fb === 0 || fb === 3) goal1 |= 1 << b; if (fb === 1 || fb === 4) goal2 |= 1 << b; if (fb < 3) goal3 |= 1 << b; }
+    CF = { packPos: packPos, bitOf: bitOf, faceOfBit: faceOfBit, goal: [0, goal1, goal2, goal3], app: app,
+      s1: bfs(1, goal1, k1), s2: bfs(2, goal2, function () { return 0; }), s3: bfs(3, goal3, k3) };
+    return CF;
+  }
+  function descend(stage, mask, goal, out) {
+    var cur = mask, d = stage.get(cur), guard = 0;
+    if (d === 255) return false;
+    while (d > 0 && guard++ < 40) {
+      var found = false;
+      for (var i = 0; i < stage.mv.length; i++) { var nm = CF.app(stage.mv[i].t, cur); if (stage.get(nm) === d - 1) { out.push(stage.mv[i].name); cur = nm; d--; found = true; break; } }
+      if (!found) return false;
+    }
+    return cur === goal;
+  }
+  function centersFast(state, T) {
+    var F = centerTables(), col = function (j) { return state[CS.idx[j]]; }, out = [], b, j, mask;
+    var segs = [];
+    function mk(f) { var m = 0; for (b = 0; b < 24; b++) { if (f(col(F.packPos[b]), F.faceOfBit[b])) m |= 1 << b; } return m; }
+    var cur = Uint8Array.from(state), st1 = [], st2 = [], st3 = [];
+    mask = mk(function (c) { return c === T[0] || c === T[3]; });
+    if (!descend(F.s1, mask, F.goal[1], st1)) return null;
+    cur = C4.applyMoves(cur, st1);
+    mask = mk2(cur, function (c, f) { return f !== 0 && f !== 3 && (c === T[1] || c === T[4]); });
+    if (!descend(F.s2, mask, F.goal[2], st2)) return null;
+    cur = C4.applyMoves(cur, st2);
+    mask = mk2(cur, function (c, f) { return c === T[f % 3]; });
+    if (!descend(F.s3, mask, F.goal[3], st3)) return null;
+    function mk2(stt, f) { var m = 0; for (var bb = 0; bb < 24; bb++) { if (f(stt[CS.idx[F.packPos[bb]]], F.faceOfBit[bb])) m |= 1 << bb; } return m; }
+    [st1, st2, st3].forEach(function (a) { if (a.length) segs.push({ k: 'centerStage', moves: a }); });
+    return segs;
   }
   var centerTarget = null;
   // Eckplätze (Aufkleber gegen den Uhrzeigersinn geordnet) – daraus lässt sich die Farbverteilung des Würfels ableiten
@@ -165,7 +247,7 @@
   function applySegs(state, segs) { segs.forEach(function (sg) { state = C4.applyMoves(state, sg.moves); }); return state; }
   function subToState(sys, sub, base) { var o = Uint8Array.from(base); sys.idx.forEach(function (i, k) { o[i] = sub[k]; }); return o; }
 
-  function solve4(colors) {
+  function solve4(colors, level) {
     var v = validate4(colors); if (!v.ok) return v;
     var T = deriveTargets(colors);
     if (!T) return { ok: false, error: 'Die Eckteile passen nicht zusammen. Bitte die Farben der Ecken prüfen.', args: [] };
@@ -176,31 +258,52 @@
     while (guard++ < 6) {
       // 1. Zentren
       var cur = CS.idx.map(function (i) { return state[i]; });
-      var r1 = greedy(CS, Uint8Array.from(cur), makeCenterScore(), cB, cBig, 'centers', 60);
+      var fast = null; try { fast = centersFast(state, T); } catch (e) { fast = null; }
+      var r1 = fast ? { segs: fast } : greedy(CS, Uint8Array.from(cur), makeCenterScore(), cB, cBig, 'centers', 60);
       if (!r1) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.', args: [] };
       state = applySegs(state, r1.segs); pCenters = pCenters.concat(r1.segs);
       // 2. Kanten paaren
-      var w0 = WS.idx.map(function (i) { return state[i]; });
-      var r2 = greedy(WS, Uint8Array.from(w0), pairScore, wB, wBig, 'pairs', 60);
+      var w0 = WS.idx.map(function (i) { return state[i]; }), r2 = null, bestCost = 1e9, tries = (level === 3) ? 4 : 1;
+      for (var tr = 0; tr < tries; tr++) {
+        var wb = wB.slice(), wbg = wBig.slice();
+        if (tr > 0) { wb.sort(function () { return Math.random() - 0.5; }); wbg.sort(function () { return Math.random() - 0.5; }); }
+        var rr = greedy(WS, Uint8Array.from(w0), pairScore, wb, wbg, 'pairs', 60, (level || 2) >= 2 ? 1 : 0);
+        if (!rr) continue;
+        var cost = 0; rr.segs.forEach(function (sg) { cost += sg.moves.length; });
+        var vv = S.validate(reduce(applySegs(state, rr.segs))); if (!vv.ok) cost += vv.kind === 'flip' ? 15 : (vv.kind === 'perm' ? 6 : 0);
+        if (cost < bestCost) { bestCost = cost; r2 = rr; }
+      }
       if (!r2) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.', args: [] };
       state = applySegs(state, r2.segs); pEdges = pEdges.concat(r2.segs);
       // 3. Reduktion auf 3x3 prüfen
       var red = reduce(state), val = S.validate(red);
-      if (val.ok) { three = S.solve(red); break; }
+      if (val.ok) { three = S.solve(red, level); break; }
       if (val.kind === 'flip') { var m1 = C4.parseAlg(PAR.oll); pPar.push({ k: 'parityOLL', moves: m1 }); state = C4.applyMoves(state, m1); continue; }
       if (val.kind === 'perm') { var m2 = C4.parseAlg(PAR.pll); pPar.push({ k: 'parityPLL', moves: m2 }); state = C4.applyMoves(state, m2); continue; }
       return { ok: false, error: val.error, args: [] };
     }
     if (!three || !three.ok) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.', args: [] };
-    function mk(no, segs, name) { var f = []; segs.forEach(function (s) { f = f.concat(s.moves); }); return { no: no, name: name, segs: segs, moves: f }; }
-    phases.push(mk(1, pCenters, 'Zentren')); phases.push(mk(2, pEdges, 'Kanten paaren')); phases.push(mk(3, pPar, 'Parität'));
-    three.phases.forEach(function (p) { var q = mk(p.no + 3, p.segs, p.name); q.desc = p.desc; q.sub = p.no; phases.push(q); });
-    var total = 0; phases.forEach(function (p) { total += p.moves.length; });
-    // Kontrolle
-    var fin = state; three.phases.forEach(function (p) { fin = C4.applyMoves(fin, p.moves); });
-    if (!C4.isSolved(fin)) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.', args: [] };
+    var raw = [{ no: 1, name: 'Zentren', segs: pCenters }, { no: 2, name: 'Kanten paaren', segs: pEdges }, { no: 3, name: 'Parität', segs: pPar }];
+    three.phases.forEach(function (p) { raw.push({ no: p.no + 3, name: p.name, desc: p.desc, sub: p.no, segs: p.segs }); });
+    // Alles zusammenfassen: unnötige Zugfolgen (z. B. u' u u') entfernen, auch über Abschnittsgrenzen hinweg
+    var allM = [], allT = [];
+    raw.forEach(function (ph, pi) { ph.segs.forEach(function (sg, si) { sg.moves.forEach(function (m) { allM.push(m); allT.push(pi * 10000 + si); }); }); });
+    var cp = C4.compact(allM, allT), fin2 = C4.applyMoves(Uint8Array.from(colors), cp.moves);
+    if (!C4.isSolved(fin2)) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.', args: [] };
+    var phases = [], total = 0;
+    raw.forEach(function (ph, pi) {
+      var segs = [], last = -1, flatM = [];
+      cp.moves.forEach(function (m, i) {
+        var tg = cp.tags[i]; if (((tg / 10000) | 0) !== pi) return;
+        var kind = ph.segs[tg % 10000].k;
+        if (tg !== last) { segs.push({ k: kind, moves: [] }); last = tg; }
+        segs[segs.length - 1].moves.push(m); flatM.push(m);
+      });
+      var q = { no: ph.no, name: ph.name, segs: segs, moves: flatM }; if (ph.desc) q.desc = ph.desc; if (ph.sub) q.sub = ph.sub;
+      phases.push(q); total += flatM.length;
+    });
     return { ok: true, phases: phases, total: total, threeStart: 4, targets: T };
   }
-  var api = { solve4: solve4, validate4: validate4, reduce: reduce, PAR: PAR, types: types };
+  var api = { warm: function () { centerTables(); }, solve4: solve4, validate4: validate4, reduce: reduce, PAR: PAR, types: types };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Solver4Lib = api;
 })(typeof window !== 'undefined' ? window : this);

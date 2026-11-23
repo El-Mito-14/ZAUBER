@@ -27,9 +27,9 @@
       <button id="spdCube" class="spdBtn"></button>
     </div>
     <div class="seg modes" id="modeSeg">
-      <button data-m="free" data-ta="Frei" class="on"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#22a455" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#22a455" stroke="#22a455" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#22a455" d="M8 28Q20 35 31 28.4"/><path class="hd" fill="#22a455" stroke="#22a455" d="M32.4 27.6L28.6 29.6L27.7 26Z"/></svg></button>
-      <button data-m="view" data-ta="Nur Ansicht"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#e03131" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#e03131" stroke="#e03131" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#22a455" d="M8 28Q20 35 31 28.4"/><path class="hd" fill="#22a455" stroke="#22a455" d="M32.4 27.6L28.6 29.6L27.7 26Z"/></svg></button>
-      <button data-m="layer" data-ta="Nur Ebenen"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#22a455" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#22a455" stroke="#22a455" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#e03131" d="M8 28Q20 35 31 28.4"/><path class="hd" fill="#e03131" stroke="#e03131" d="M32.4 27.6L28.6 29.6L27.7 26Z"/></svg></button>
+      <button data-m="free" data-ta="Frei" class="on"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#22a455" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#22a455" stroke="#22a455" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#22a455" d="M8.5 27.6Q20.0 35.2 30.6 28.2"/><path class="hd" fill="#22a455" stroke="#22a455" d="M33.4 26.3L31.7 31.0L28.5 26.1Z"/></svg></button>
+      <button data-m="view" data-ta="Nur Ansicht"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#e03131" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#e03131" stroke="#e03131" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#22a455" d="M8.5 27.6Q20.0 35.2 30.6 28.2"/><path class="hd" fill="#22a455" stroke="#22a455" d="M33.4 26.3L31.7 31.0L28.5 26.1Z"/></svg></button>
+      <button data-m="layer" data-ta="Nur Ebenen"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#22a455" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#22a455" stroke="#22a455" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#e03131" d="M8.5 27.6Q20.0 35.2 30.6 28.2"/><path class="hd" fill="#e03131" stroke="#e03131" d="M33.4 26.3L31.7 31.0L28.5 26.1Z"/></svg></button>
     </div>
     <div class="row">
       <button id="btnScramble" data-t>Mischen</button>
@@ -53,6 +53,7 @@
       <div class="row">
         <button id="btnClear" data-t>Leeren</button>
         <button id="btnFromCube" data-t>Vom 3D-Würfel</button>
+        <button id="depthBtn" class="spdBtn depthBtn"></button>
         <button id="btnCompute" class="primary" data-t>Lösung berechnen</button>
       </div>
     </div>
@@ -126,10 +127,10 @@
       </div>
       <div id="peErr" class="err" hidden></div>
       <div class="row">
-        <button id="peBack" data-t>Zurück</button>
-        <button id="peReset" data-t>Gelöster Würfel</button>
-        <button id="peClear" data-t>Leeren</button>
-        <button id="peCompute" class="primary" data-t>Anleitung berechnen</button>
+        <button id="peReset" class="icoBtn" data-ta="Gelöster Würfel"></button>
+        <button id="peClear" class="icoBtn" data-ta="Leeren"></button>
+        <button id="peCompute" class="icoBtn primary" data-ta="Anleitung berechnen"></button>
+        <button id="peSave" class="icoBtn" data-ta="Muster speichern"></button>
       </div>
     </div>
   </section>
@@ -143,7 +144,7 @@
         <div class="row"><button id="themeBtn" class="themeBtn"></button></div>
         <div class="ringWrap"><canvas id="ring"></canvas><button id="ringOk" data-t>Fertig</button></div>
         <div class="optRow"><span data-t>Gedrehte Ebene hervorheben</span><button id="hlToggle" class="toggle"></button></div>
-        <p class="lDesc" data-t>Beim Abspielen von Lösung und Lektionen wird die Ebene, die gedreht wird, rot umrandet.</p>
+        <p class="lDesc" data-t>Beim Abspielen von Lösung und Lektionen wird die Ebene, die gedreht wird, umrandet.</p>
       </div>
     </div>
     <div class="acc" id="acc-cube">
@@ -151,6 +152,13 @@
       <div class="accBody">
         <div class="seg" id="sizeSeg"><button data-n="3">3x3</button><button data-n="4">4x4</button></div>
         <p class="lDesc" data-t>Wähle, ob du mit dem 3x3- oder dem 4x4-Würfel arbeiten möchtest. Das gilt für Würfel, Lösen und Lektionen.</p>
+      </div>
+    </div>
+    <div class="acc" id="acc-depth">
+      <button class="accHead"><span data-t>Berechnungstiefe</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="accBody">
+        <div id="depthList"></div>
+        <p class="lDesc" data-t>Je tiefer die Berechnung, desto weniger Züge braucht die Lösung. Beim 3x3 sind es meist etwa 20 Züge, beim 4x4 rund 100. Die Berechnung läuft im Hintergrund.</p>
       </div>
     </div>
     <div class="acc" id="acc-lang">
@@ -168,6 +176,7 @@
 <div id="modal" hidden><div class="card"><div id="modalText"></div><button id="modalClose" class="primary wide" data-t>OK</button></div></div>
 <script src="cube.js"></script>
 <script src="solver.js"></script>
+<script src="twophase.js"></script>
 <script src="solver4.js"></script>
 <script src="lessons.js"></script>
 <script src="render.js"></script>

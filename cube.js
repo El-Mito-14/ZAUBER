@@ -126,7 +126,72 @@
       });
       return out;
     }
+    // Zusammenfassen: Folgen von Zügen auf derselben Achse (z. B. u' u u') werden auf die kürzeste gleichwertige Folge gekürzt.
+    // tags (optional) = Array gleicher Länge; ein zusammengefasster Zug erhält die Markierung des letzten beteiligten Zuges.
+    var vocab = null, axisTab = null;
+    function buildVocab() {
+      var names = [], seen = {};
+      function add(b) { ["", "'", "2"].forEach(function (sf) { names.push(b + sf); }); }
+      FACE_NAMES.forEach(function (f) {
+        add(f);
+        if (N === 4) { add(f + f.toLowerCase()); add(f.toLowerCase()); } else if (N === 3) add(f.toLowerCase());
+      });
+      if (N === 3) ['M', 'E', 'S'].forEach(add);
+      vocab = [[], [], []];
+      names.forEach(function (nm) {
+        var l; try { l = moveToLayer(nm); } catch (e) { return; }
+        if (l.cs.length >= N) return;
+        var vec = new Array(N).fill(0);
+        l.cs.forEach(function (c) { vec[Math.round(c + m)] += l.steps; });
+        var sig = l.k + ':' + vec.map(function (v) { return ((v % 4) + 4) % 4; }).join('');
+        if (seen[sig]) return; seen[sig] = 1;
+        vocab[l.k].push({ name: nm, vec: vec.map(function (v) { return ((v % 4) + 4) % 4; }) });
+      });
+      // BFS je Achse über alle 4^N Drehvektoren
+      axisTab = [];
+      for (var k = 0; k < 3; k++) {
+        var total = Math.pow(4, N), dist = new Int16Array(total).fill(-1), par = new Int16Array(total), via = new Int16Array(total);
+        dist[0] = 0; var queue = [0];
+        for (var qi = 0; qi < queue.length; qi++) {
+          var cur = queue[qi];
+          for (var vi = 0; vi < vocab[k].length; vi++) {
+            var vv = vocab[k][vi].vec, nx = 0, pw = 1, cd = cur;
+            for (var i = 0; i < N; i++) { nx += (((cd % 4) + vv[i]) % 4) * pw; cd = (cd / 4) | 0; pw *= 4; }
+            if (dist[nx] < 0) { dist[nx] = dist[cur] + 1; par[nx] = cur; via[nx] = vi; queue.push(nx); }
+          }
+        }
+        axisTab.push({ dist: dist, par: par, via: via });
+      }
+    }
+    function compact(moves, tags) {
+      if (!vocab) buildVocab();
+      var outM = [], outT = [], i = 0;
+      while (i < moves.length) {
+        var l0; try { l0 = moveToLayer(moves[i]); } catch (e) { l0 = null; }
+        if (!l0 || l0.cs.length >= N) { outM.push(moves[i]); outT.push(tags ? tags[i] : 0); i++; continue; }
+        var k = l0.k, j = i, vec = new Array(N).fill(0);
+        while (j < moves.length) {
+          var lj; try { lj = moveToLayer(moves[j]); } catch (e) { lj = null; }
+          if (!lj || lj.cs.length >= N || lj.k !== k) break;
+          lj.cs.forEach(function (c) { vec[Math.round(c + m)] += lj.steps; });
+          j++;
+        }
+        var code = 0, pw2 = 1;
+        for (var q = 0; q < N; q++) { code += (((vec[q] % 4) + 4) % 4) * pw2; pw2 *= 4; }
+        var tab = axisTab[k], seq = [], cur2 = code;
+        if (tab.dist[code] < 0 || tab.dist[code] > j - i) { for (var z = i; z < j; z++) { outM.push(moves[z]); outT.push(tags ? tags[z] : 0); } }
+        else {
+          while (cur2 !== 0) { seq.push(vocab[k][tab.via[cur2]].name); cur2 = tab.par[cur2]; }
+          seq.reverse();
+          if (seq.length === j - i) { for (var z2 = i; z2 < j; z2++) { outM.push(moves[z2]); outT.push(tags ? tags[z2] : 0); } }
+          else seq.forEach(function (nm) { outM.push(nm); outT.push(tags ? tags[j - 1] : 0); });
+        }
+        i = j;
+      }
+      return { moves: outM, tags: outT };
+    }
     return {
+      compact: compact,
       N: N, SZ: SZ, FACE_NAMES: FACE_NAMES, FACE_NORMALS: FACE_NORMALS, SCHEME: SCHEME, COLOR_NAMES: COLOR_NAMES,
       stickers: stickers, indexMap: indexMap, key: key, rotVec: rotVec, layerPerm: layerPerm, moveToLayer: moveToLayer,
       multiPerm: multiPerm, permOfMove: permOfMove, faceOfMove: faceOfMove, MOVE_NAMES: MOVE_NAMES, MOVE_PERMS: MOVE_PERMS,

@@ -279,6 +279,8 @@
   var ADJ_N = ['Weißes', 'Gelbes', 'Rotes', 'Oranges', 'Grünes', 'Blaues'];
   var ADJ_P = ['Weiße', 'Gelbe', 'Rote', 'Orange', 'Grüne', 'Blaue'];
   var LABELS = {
+    prep: ['Vorbereitung', 'Bringt den Würfel in eine Zwischenform, aus der er sich mit wenigen weiteren Zügen lösen lässt.'],
+    finish: ['Endphase', 'Löst den Würfel aus der Zwischenform vollständig.'],
     turn: ['Oberseite drehen', 'Die obere Schicht wird gedreht, damit der nächste Stein passend steht.'],
     cross: ['Kreuz-Züge', 'Eine kurze Zugfolge, die die vier Kanten der unteren Schicht an ihren Platz bringt.'],
     trigger: ['Trigger (Ecke einsetzen)', 'Der Grundbaustein „R U R\' U\'“. Er wird so oft wiederholt, bis die Ecke richtig sitzt.'],
@@ -310,16 +312,18 @@
       'Zum Schluss werden die letzten Kanten an ihren Platz getauscht – der Würfel ist dann gelöst.'
     ][no];
   }
-  function solve(colors) {
+  function solve(colors, level) {
     var v = validate(colors);
     if (!v.ok) return v;
-    var raw = solveNormalized(v.normalized);
-    if (!raw) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.' };
-    var phases = raw.map(function (p) {
-      return { no: p.no, name: phaseName(p.no, colors), desc: phaseDesc(p.no, colors), moves: p.moves, segs: p.segs };
-    });
-    var total = 0; phases.forEach(function (p) { total += p.moves.length; });
-    return { ok: true, phases: phases, total: total };
+    var TP = (typeof require !== 'undefined' && typeof module !== 'undefined') ? require('./twophase.js') : root.TwoPhase, r = null;
+    try { r = TP.solve(v.normalized, level || 2); } catch (e) { r = null; }
+    if (!r) return { ok: false, error: 'Für diese Eingabe konnte keine Lösung berechnet werden. Bitte alle Farben noch einmal prüfen.' };
+    var p1 = r.moves.slice(0, r.p1), p2 = r.moves.slice(r.p1);
+    var phases = [
+      { no: 1, name: 'Würfel vorbereiten', desc: 'Der Würfel wird in eine Zwischenform gebracht: Alle Kanten sind richtig herum, alle Ecken richtig gedreht und die vier mittleren Kanten liegen in der mittleren Schicht.', moves: p1, segs: p1.length ? [{ k: 'prep', moves: p1.slice() }] : [] },
+      { no: 2, name: 'Würfel lösen', desc: 'Aus der Zwischenform wird der Würfel mit den Seitendrehungen Oben, Unten und halben Drehungen der anderen Seiten fertig gelöst.', moves: p2, segs: p2.length ? [{ k: 'finish', moves: p2.slice() }] : [] }
+    ];
+    return { ok: true, phases: phases, total: r.moves.length, ms: r.ms };
   }
 
   var api = { LABELS: LABELS, validate: validate, solve: solve, ALG: ALG, makeMacro: makeMacro, locate: locate, edgeSlots: edgeSlots, cornerSlots: cornerSlots, SOLVED_NORM: SOLVED_NORM };

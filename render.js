@@ -59,8 +59,9 @@
     }
     if (this.target) {
       var dy = this.target[0] - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
-      this.yaw += dy * 0.14; this.pitch += (this.target[1] - this.pitch) * 0.14;
-      if (Math.abs(dy) < 0.003 && Math.abs(this.target[1] - this.pitch) < 0.003) { if (this.exact) { this.yaw = this.target[0]; this.pitch = this.target[1]; } this.target = null; this.exact = false; }
+      var dp = this.target[1] - this.pitch; dp = Math.atan2(Math.sin(dp), Math.cos(dp));
+      this.yaw += dy * 0.14; this.pitch += dp * 0.14;
+      if (Math.abs(dy) < 0.003 && Math.abs(dp) < 0.003) { if (this.exact) { this.yaw = this.target[0]; this.pitch = this.target[1]; } this.target = null; this.exact = false; }
     }
     this.draw(); this.drawVC();
   };
@@ -220,7 +221,8 @@
     d.maxMove = Math.max(d.maxMove, Math.hypot(xy[0] - d.x0, xy[1] - d.y0));
     if (d.mode === 'none') return;
     if (d.mode === 'view') {
-      this.yaw += dx * 0.01; this.pitch = Math.max(-1.5708, Math.min(1.5708, this.pitch + dy * 0.01)); return;
+      // Freie Drehung ohne Grenzen: über die Pole hinweg kehrt sich die waagerechte Richtung um
+      this.yaw += dx * 0.01 * (Math.cos(this.pitch) >= 0 ? 1 : -1); var np = this.pitch + dy * 0.01; this.pitch = Math.atan2(Math.sin(np), Math.cos(np)); return;
     }
     var tx = xy[0] - d.x0, ty = xy[1] - d.y0;
     if (d.mode === 'pending') {

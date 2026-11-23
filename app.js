@@ -22,13 +22,13 @@
     pause: '<svg viewBox="0 0 24 24"><path class="f" d="M7 5h3.6v14H7zM13.4 5H17v14h-3.4z"/></svg>'
   };
   var SPD_IC = {
-    vslow: '<svg viewBox="0 0 32 32"><circle cx="19" cy="14" r="8"/><circle cx="19" cy="14" r="3.4"/><path d="M3 26h22.5c1.8 0 2.8-1.2 2.8-2.6"/><path d="M5 26c-2-4-1-8 2-10"/><path d="M7 16l-1.6-4M9.4 16.6l1-4"/></svg>',
+    vslow: '<svg viewBox="0 0 32 32"><g transform="translate(32 0) scale(-1 1)"><circle cx="19" cy="14" r="8"/><circle cx="19" cy="14" r="3.4"/><path d="M3 26h22.5c1.8 0 2.8-1.2 2.8-2.6"/><path d="M5 26c-2-4-1-8 2-10"/><path d="M7 16l-1.6-4M9.4 16.6l1-4"/></g></svg>',
     slow: '<svg viewBox="0 0 32 32"><path d="M5 22a11 9.5 0 0 1 22 0z"/><circle cx="28.6" cy="19.4" r="2.3"/><path d="M10 22v3.6M22 22v3.6"/></svg>',
     normal: '<svg viewBox="0 0 32 32"><circle cx="16" cy="5.6" r="2.6"/><path d="M16 9v10"/><path d="M16 11.5l-6 5M16 11.5l6 4"/><path d="M16 19l-5.5 9M16 19l5.5 9"/></svg>',
     fast: '<svg viewBox="0 0 32 32"><path d="M5 21.5c0-4.8 4-8.2 9.5-8.2 3.4 0 6.2 1 8 2.6"/><path d="M5 21.5c0 1.8 1.8 3.2 4.2 3.2h9.6c2.2 0 3.6-1.2 3.6-2.8"/><path d="M22.8 15.9c.6-1.6 2.2-2.4 3.7-2.1 1.2.2 2 1.2 2.1 2.4.1 1.4-.6 2.2-1.8 2.9-1.5.8-3.4.7-4.2-.4"/><path d="M24.8 13.6c-1.4-2.4-1.3-5.6.2-7 1.5 1.4 1.8 4.4 1.3 7.1M27.2 14c.8-2.3 2.2-4.2 3.5-4.1.5 1.8-.3 3.8-1.9 5.3"/><circle cx="4.4" cy="19.4" r="1.6"/><path d="M9.5 24.7l-3 2.6h4.2M19 24.5l3.4 2.8h-4"/></svg>',
     vfast: '<svg viewBox="0 0 32 32"><path d="M16 3c5 5 5 12 4 18h-8c-1-6-1-13 4-18z"/><circle cx="16" cy="12" r="2.2"/><path d="M12 18l-4 5 4-1M20 18l4 5-4-1"/><path d="M14 24c0 3 2 5 2 5s2-2 2-5"/></svg>'
   };
-  var SPEEDS = [{ id: 'vslow', ms: 2400, label: 'sehr langsam' }, { id: 'slow', ms: 1000, label: 'langsam' }, { id: 'normal', ms: 350, label: 'normal' }, { id: 'fast', ms: 150, label: 'schnell' }, { id: 'vfast', ms: 70, label: 'sehr schnell' }];
+  var SPEEDS = [{ id: 'vslow', ms: 4200, label: 'sehr langsam' }, { id: 'slow', ms: 1000, label: 'langsam' }, { id: 'normal', ms: 350, label: 'normal' }, { id: 'fast', ms: 150, label: 'schnell' }, { id: 'vfast', ms: 70, label: 'sehr schnell' }];
   var speedIdx = parseInt(store.get('zauber.speed'), 10); if (!(speedIdx >= 0 && speedIdx < 5)) speedIdx = 2;
   function dur() { return SPEEDS[speedIdx].ms; }
   function gap() { return Math.max(60, Math.round(dur() * 0.25)); }
@@ -39,6 +39,61 @@
   function setAutoIcon(id, playing) { setIcon(id, playing ? 'pause' : 'play'); }
   setIcon('bStart', 'start'); setIcon('bBack', 'back'); setIcon('bNext', 'next'); setAutoIcon('bAuto', false);
   setIcon('lStart', 'start'); setIcon('lBackStep', 'back'); setIcon('lNext', 'next'); setAutoIcon('lAuto', false);
+
+
+  // ---------- Berechnungstiefe ----------
+  function gearPoly(cx, cy, n, rIn, rOut) {
+    var pts = [], st2 = Math.PI * 2 / n, i2;
+    for (i2 = 0; i2 < n; i2++) {
+      var a0 = i2 * st2 - st2 * 0.5, w = st2 * 0.2, o = st2 * 0.12;
+      [[a0 + st2 * 0.5 - w - o, rIn], [a0 + st2 * 0.5 - w, rOut], [a0 + st2 * 0.5 + w, rOut], [a0 + st2 * 0.5 + w + o, rIn]].forEach(function (q) { pts.push((cx + Math.cos(q[0]) * q[1]).toFixed(2) + ' ' + (cy + Math.sin(q[0]) * q[1]).toFixed(2)); });
+    }
+    return 'M' + pts.join('L') + 'Z';
+  }
+  var BRAIN_L = '<path d="M15.2 5.4C13.8 3.9 11 4.1 9.9 6.1 7.6 5.9 6 7.8 6.4 10 4.6 10.9 4.3 13.3 5.5 14.9 4.2 16.7 4.9 19.3 6.9 20.1 6.9 22.5 9.1 24.3 11.3 23.7 12.1 25.7 14.5 26.4 15.2 25"/><path d="M9.6 11.2C11.6 11.2 12 13 13.8 13M8.6 16.2C10.6 16.2 11.4 14.7 13 15.6M11 20.2C12.4 19.6 13.4 20.6 14.4 20.1"/>';
+  var BRAIN = '<svg viewBox="0 0 32 32">' + BRAIN_L + '<g transform="translate(32 0) scale(-1 1)">' + BRAIN_L + '</g><path d="M16 6.2V24.6"/></svg>';
+  var DEPTH_IC = {
+    1: '<svg viewBox="0 0 32 32"><path d="M19 3L8.5 18H15.6L13 29L23.8 13.4H16.6Z"/></svg>',
+    2: '<svg viewBox="0 0 32 32"><path d="' + gearPoly(16, 16, 8, 8.6, 12.4) + '"/><circle cx="16" cy="16" r="3.6"/></svg>',
+    3: BRAIN
+  };
+  var DEPTHS = [{ id: 1, label: 'Schnell', desc: 'Sofort fertig, die Lösung ist etwas länger.' }, { id: 2, label: 'Mittel', desc: 'Kurze Wartezeit, kürzere Lösung.' }, { id: 3, label: 'Tief', desc: 'Kürzeste Lösung, die Berechnung dauert länger.' }];
+  var depth = parseInt(store.get('zauber.depth'), 10); if (!(depth >= 1 && depth <= 3)) depth = 2;
+  function renderDepthBtn() { var b = $('depthBtn'); b.innerHTML = DEPTH_IC[depth]; b.setAttribute('aria-label', T('Berechnungstiefe')); b.setAttribute('title', T('Berechnungstiefe')); }
+  function depthRows() {
+    var h = '';
+    DEPTHS.forEach(function (d) { h += '<button class="spdRow depthRow' + (d.id === depth ? ' on' : '') + '" data-d="' + d.id + '">' + DEPTH_IC[d.id] + '<span><b>' + T(d.label) + '</b><small>' + T(d.desc) + '</small></span></button>'; });
+    return h;
+  }
+  function renderDepthList() { $('depthList').innerHTML = depthRows(); }
+  function setDepth(d) { depth = d; store.set('zauber.depth', String(d)); renderDepthBtn(); renderDepthList(); }
+  function openDepthDialog() { openModal('<div class="spdTitle">' + T('Berechnungstiefe') + '</div>' + depthRows() + '<p class="lDesc" style="margin:10px 0 0">' + T('Je tiefer die Berechnung, desto weniger Züge braucht die Lösung. Beim 3x3 sind es meist etwa 20 Züge, beim 4x4 rund 100. Die Berechnung läuft im Hintergrund.') + '</p>', 'speed'); }
+  $('depthBtn').onclick = openDepthDialog;
+  $('depthList').addEventListener('click', function (e) { var el = e.target.closest ? e.target.closest('.depthRow') : null; if (el) setDepth(parseInt(el.dataset.d, 10)); });
+
+  // Berechnung im Hintergrund (Web Worker), mit Rückfall auf den Hauptprozess
+  var wk = null, wkFailed = false, wid = 0, pending = {}, calcBusy = false;
+  function runMain(p) {
+    setTimeout(function () {
+      var r; try { r = p.n === 4 ? S4.solve4(p.colors, p.level) : S.solve(p.colors, p.level); } catch (e) { r = { ok: false, error: 'Unerwarteter Fehler bei der Berechnung.' }; }
+      p.cb(r);
+    }, 30);
+  }
+  function startWorker() {
+    if (wk || wkFailed) return;
+    try {
+      wk = new Worker('solvework.js');
+      wk.onmessage = function (e) { var m = e.data; if (m && m.id && pending[m.id]) { var p = pending[m.id]; delete pending[m.id]; p.cb(m.r); } };
+      wk.onerror = function () { wkFailed = true; wk = null; var ps = pending; pending = {}; Object.keys(ps).forEach(function (k) { runMain(ps[k]); }); };
+    } catch (e) { wkFailed = true; wk = null; }
+  }
+  function solveAsync(colors, cb) {
+    startWorker();
+    var p = { n: G.N, colors: colors, level: depth, cb: cb };
+    if (wk) { var id = ++wid; pending[id] = p; wk.postMessage({ id: id, n: p.n, colors: colors, level: depth }); } else runMain(p);
+  }
+  function warmUp() { startWorker(); if (wk) wk.postMessage({ warm: cubeN }); }
+  setTimeout(warmUp, 1200);
 
   // ---------- Zurück-Taste (Android) ----------
   var backStack = [], ignorePop = 0;
@@ -54,7 +109,7 @@
   });
   var modalOpen = false, modalKind = '';
   function openModal(html, kind) {
-    $('modalText').innerHTML = html; modalKind = kind || ''; $('modalClose').hidden = (kind === 'speed'); $('modal').hidden = false;
+    $('modalText').innerHTML = html; modalKind = kind || ''; $('modalClose').hidden = (kind === 'speed' || kind === 'name' || kind === 'confirm'); $('modal').hidden = false;
     if (!modalOpen) { modalOpen = true; pushBack('modal', hideModal); }
   }
   function hideModal() { $('modal').hidden = true; modalOpen = false; modalKind = ''; }
@@ -93,8 +148,8 @@
   $('tab-cube').onclick = function () { showTab('cube'); };
   $('tab-solve').onclick = function () { showTab('solve'); };
   $('tab-lessons').onclick = function () { showTab('lessons'); };
-  $('tab-patterns').onclick = function () { showTab('patterns'); };
-  function hideSettings() { if (!settingsOpen) return; settingsOpen = false; showTab(curTab); }
+  $('tab-patterns').onclick = function () { if (curTab === 'patterns' && !settingsOpen && !$('patEdit').hidden) { edLeave(); return; } showTab('patterns'); };
+  function hideSettings() { if (!settingsOpen) return; settingsOpen = false; pendHue = hue; updateRingBtn(); showTab(curTab); }
   function openSettings() {
     if (settingsOpen) return;
     settingsOpen = true;
@@ -124,6 +179,7 @@
   $('modalText').addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('.spdRow') : null;
     if (!el) return;
+    if (el.dataset.d !== undefined) { setDepth(parseInt(el.dataset.d, 10)); closeModal(); return; }
     speedIdx = parseInt(el.dataset.s, 10); store.set('zauber.speed', String(speedIdx)); renderSpeedBtns(); closeModal();
   });
 
@@ -143,7 +199,7 @@
       Array.prototype.forEach.call($('modeSeg').children, function (x) { x.className = x === b ? 'on' : ''; });
     };
   });
-  function busy() { return cubeView.isBusy() || autoRun; }
+  function busy() { return cubeView.isBusy() || autoRun || calcBusy; }
   $('btnReset').onclick = function () {
     stopAuto(); cubeView.clearQueue(); cubeView.anim = null; cubeView.setState(G.solvedColors());
     undoStack = []; moves = 0; updStatus();
@@ -174,20 +230,19 @@
     cubeView.enqueueName(m, dur(), function () { autoIdx++; setTimeout(autoStep, gap()); });
   }
   function stopAuto() { autoRun = false; autoPaused = false; $('autoBar').hidden = true; cubeView.layerDrag = true; $('aPause').textContent = T('Pause'); }
-  function solveAny(colors) { return G.N === 4 ? S4.solve4(colors) : S.solve(colors); }
   function errText(r) { return T(r.error, (r.args || []).map(function (a) { return T(a); })); }
   $('btnAutoSolve').onclick = function () {
-    if (busy()) return;
+    if (busy() || calcBusy) return;
     if (G.isSolved(cubeView.state)) { updStatus('Der Würfel ist schon gelöst.'); return; }
-    updStatus('Berechne Lösung ...');
-    setTimeout(function () {
-      var r = solveAny(Array.prototype.slice.call(cubeView.state));
+    updStatus('Berechne Lösung ...'); calcBusy = true;
+    solveAsync(Array.prototype.slice.call(cubeView.state), function (r) {
+      calcBusy = false;
       if (!r.ok) { $('cubeStatus').textContent = errText(r); return; }
       autoMoves = []; r.phases.forEach(function (p) { autoMoves = autoMoves.concat(p.moves); });
       autoIdx = 0; autoRun = true; autoPaused = false; cubeView.layerDrag = false;
       $('autoBar').hidden = false; $('aPause').textContent = T('Pause');
       autoStep();
-    }, 30);
+    });
   };
   $('aPause').onclick = function () {
     if (!autoRun) return;
@@ -251,45 +306,31 @@
     centers: ['Zentren-Dreiertausch', 'Tauscht drei Zentrumssteine im Kreis, alles andere bleibt.'],
     pairs: ['Kantenpaare', 'Bewegt Kantenteile so, dass zwei passende Teile nebeneinander liegen.'],
     parityOLL: ['OLL-Parität', 'Dreht eine einzelne Kante um. Das gibt es nur beim 4x4.'],
-    parityPLL: ['PLL-Parität', 'Vertauscht zwei Kantenpaare. Das gibt es nur beim 4x4.']
+    parityPLL: ['PLL-Parität', 'Vertauscht zwei Kantenpaare. Das gibt es nur beim 4x4.'],
+    centerStage: ['Zentren-Zugfolge', 'Bringt Zentrumssteine mit wenigen Zügen an ihre Seite.']
   };
   function labelOf(k) { return LABELS4[k] || LABELS[k] || ['Zugfolge', '']; }
   $('btnCompute').onclick = function () {
     var err = $('errBox'); err.hidden = true; closePalette();
+    if (calcBusy) return; calcBusy = true;
     $('btnCompute').textContent = T('Berechne ...'); $('btnCompute').disabled = true;
-    setTimeout(function () {
-      var r;
-      try { r = solveAny(Array.prototype.slice.call(inp)); } catch (e) { r = { ok: false, error: 'Unerwarteter Fehler bei der Berechnung.' }; }
+    solveAsync(Array.prototype.slice.call(inp), function (r) {
+      calcBusy = false;
       $('btnCompute').textContent = T('Lösung berechnen'); $('btnCompute').disabled = false;
       if (!r.ok) { err.textContent = errText(r); err.hidden = false; return; }
       startPlan(r);
-    }, 40);
+    });
   };
-  function phaseCount() { return plan.N === 4 ? 10 : 7; }
-  var CN = ['Weiß', 'Gelb', 'Rot', 'Orange', 'Grün', 'Blau'];
-  function pName(p) {
-    if (plan.N === 4 && p.no <= 3) return T(p.name);
-    var n3 = plan.N === 4 ? p.no - 3 : p.no;
-    if (plan.dColor === 0 && plan.uColor === 1) return T(p.name);
-    var dn = T(CN[plan.dColor]), un = T(CN[plan.uColor]);
-    return [null, T('Kreuz unten ({0})', [dn]), T('Untere Ecken ({0})', [dn]), T('Mittlere Kanten'), T('Kreuz oben ({0})', [un]), T('Obere Ecken drehen ({0})', [un]), T('Ecken platzieren'), T('Kanten platzieren')][n3];
-  }
+  function phaseCount() { return plan.phases.length; }
+  function pName(p) { return T(p.name); }
   function pDesc(p) {
-    var n3 = plan.N === 4 ? p.no - 3 : p.no, W = T(CN[plan.dColor]), Y = T(CN[plan.uColor]);
     if (plan.N === 4 && p.no === 1) return T('Bringe auf jeder Seite die vier Zentrumssteine in die Farbe der Seite. Danach verhalten sie sich wie die festen Mittelsteine eines 3x3.');
     if (plan.N === 4 && p.no === 2) return T('Setze die zwei Kantenteile jeder Kante zu einem Paar zusammen (gleiche Farben nebeneinander). Danach ist jede Kante wie beim 3x3.');
     if (plan.N === 4 && p.no === 3) return T('Diesen Fall gibt es nur beim 4x4. Ein besonderer Algorithmus korrigiert ihn, danach geht es wie beim 3x3 weiter.');
-    return [null,
-      T('Bringe die vier {0}-Kanten unten an ihren Platz. Sie bilden ein Kreuz, und die Seitenfarben passen zu den Mittelsteinen.', [W]),
-      T('Setze die vier {0}-Ecken unten ein. Danach ist die untere Schicht komplett {0} und die Seitenränder passen.', [W]),
-      T('Setze die vier Kanten der mittleren Schicht ein. Danach sind zwei Schichten fertig.'),
-      T('Drehe die Kanten oben so, dass auf der Oberseite ({0}) ein Kreuz entsteht.', [Y]),
-      T('Drehe die oberen Ecken, bis die ganze Oberseite einfarbig ({0}) ist.', [Y]),
-      T('Bringe die oberen Ecken an den richtigen Platz (die Seitenfarben passen zu den Mittelsteinen).'),
-      T('Zum Schluss werden die letzten Kanten an ihren Platz getauscht - der Würfel ist dann gelöst.')][n3];
+    return T(p.desc || '');
   }
   function startPlan(r) {
-    plan = r; plan.N = G.N; plan.dColor = G.N === 4 ? r.targets[3] : inp[31]; plan.uColor = G.N === 4 ? r.targets[0] : inp[4]; flat = []; states = [Uint8Array.from(inp)];
+    plan = r; plan.N = G.N; flat = []; states = [Uint8Array.from(inp)];
     r.phases.forEach(function (p) {
       p.startIdx = -1;
       p.segs.forEach(function (sg) {
@@ -372,7 +413,7 @@
   $('btnPhaseInfo').onclick = function () {
     var st = flat[idx];
     openModal((st ? '<p><b>' + pName(st.p) + '</b></p><p>' + pDesc(st.p) + '</p>' : '') + legendHtml() +
-      '<p>' + T('<b>Folgen:</b> Die Ansicht dreht sich automatisch zu der Seite, die gedreht wird. <b>Rote Umrandung</b> = Seite, die du drehen musst. Das kleine Netz oben rechts zeigt alle sechs Seiten.') + '</p>');
+      '<p>' + T('<b>Folgen:</b> Die Ansicht dreht sich automatisch zu der Seite, die gedreht wird. <b>Umrandung</b> = Seite, die du drehen musst. Das kleine Netz oben rechts zeigt alle sechs Seiten.') + '</p>');
   };
   $('btnBackInput').onclick = function () {
     auto = false; solveView.clearQueue(); solveView.anim = null; plan = null;
@@ -380,11 +421,11 @@
   };
   $('btnRecipe').onclick = function () {
     if (!plan) return;
-    var h = '<p><b>' + T('Rezept: Schicht für Schicht') + '</b></p><p>' + T('Die Lösung besteht aus {0} Schritten. Tippe auf einen Schritt, um dorthin zu springen.', [phaseCount()]) + '</p>';
+    var h = '<p><b>' + T('Rezept') + '</b></p><p>' + T('Die Lösung besteht aus {0} Schritten. Tippe auf einen Schritt, um dorthin zu springen.', [phaseCount()]) + '</p>';
     plan.phases.forEach(function (p) {
       var algs = [], seen = {};
       p.segs.forEach(function (sg) {
-        if (sg.k === 'turn' || seen[sg.k]) return; seen[sg.k] = 1;
+        var uniq = (sg.k !== 'centerStage' && sg.k !== 'prep' && sg.k !== 'finish'); if (sg.k === 'turn' || (uniq && seen[sg.k])) return; seen[sg.k] = 1;
         algs.push('<code>' + T(labelOf(sg.k)[0]) + ': ' + sg.moves.join(' ') + '</code>');
       });
       var done = p.moves.length === 0;
@@ -471,7 +512,7 @@
     if (!lCur) return;
     openModal('<div class="lGroup">' + T(lCur.sec.name) + ' / ' + T(lCur.grp.name) + '</div><p><b>' + T(lCur.it.name) + '</b></p><p>' + LL.summary(lCur.sec, lCur.it, T) + '</p>' +
       '<div class="notation">' + lCur.it.alg + '</div>' + legendHtml() +
-      '<p>' + T('Farbig sind die beteiligten Steine, grau alle anderen. Rote Umrandung = Seite, die gedreht wird. Oben im Bild siehst du den Zustand vorher und nachher.') + '</p>');
+      '<p>' + T('Farbig sind die beteiligten Steine, grau alle anderen. Umrandung = Seite, die gedreht wird. Oben im Bild siehst du den Zustand vorher und nachher.') + '</p>');
   };
   function hideLesson() {
     lAuto = false; lOpen = false; lessonView.clearQueue(); lessonView.anim = null; $('lessonDetail').hidden = true; $('lessonListWrap').hidden = false;
@@ -508,8 +549,17 @@
   // ---------- Muster ----------
   var PATSEC = function () { return { id: 'pat', name: 'Muster', kind: 'iso', lib: G }; };
   function patItems() { return G.N === 4 ? LL.PAT4 : LL.PAT3; }
+  var DEL_IC = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   function renderPatterns() {
-    var items = patItems(), h = '<div class="cat">' + T('Katalog') + '</div><div class="lgrid">';
+    var items = patItems(), h = '', mine = loadMine().filter(function (m) { return m.n === G.N; });
+    if (mine.length) {
+      h += '<div class="cat">' + T('Meine Muster') + '</div><div class="lgrid">';
+      mine.forEach(function (m) {
+        h += '<div class="lcardWrap"><button class="lcard" data-m="' + m.id + '"><canvas class="thumb"></canvas><b>' + esc(m.name) + '</b><span class="sub">' + T('{0} Züge', [m.alg.split(' ').length]) + '</span></button><button class="delPat" data-del="' + m.id + '" aria-label="' + T('Löschen') + '">' + DEL_IC + '</button></div>';
+      });
+      h += '</div>';
+    }
+    h += '<div class="cat">' + T('Katalog') + '</div><div class="lgrid">';
     items.forEach(function (it, i) {
       var a = (it._a && it._a.lib === G) ? it._a : LL.analyzePattern(it, G);
       h += '<button class="lcard" data-i="' + i + '"><canvas class="thumb"></canvas><b>' + T(it.name) + '</b><span class="sub">' + T('{0} Züge', [a.moves.length]) + '</span><small>' + it.alg + '</small></button>';
@@ -517,12 +567,18 @@
     h += '</div>';
     var box = $('patList'); box.innerHTML = h;
     box.onclick = function (e) {
+      var d = e.target.closest ? e.target.closest('.delPat') : null;
+      if (d) { confirmDelete(+d.dataset.del); return; }
       var b = e.target.closest ? e.target.closest('.lcard') : null; if (!b) return;
+      if (b.dataset.m) { var m = mine.filter(function (x) { return x.id === +b.dataset.m; })[0]; if (m) openPatternView(m.name, m.alg, m.c); return; }
       var it = items[+b.dataset.i]; LL.analyzePattern(it, G);
       openLesson(PATSEC(), { name: 'Katalog' }, it, 'patterns');
     };
     setTimeout(function () {
-      box.querySelectorAll('.lcard').forEach(function (b) { Thumbs.iso(b.querySelector('canvas'), items[+b.dataset.i]._a.after, undefined, undefined, G); });
+      box.querySelectorAll('.lcard').forEach(function (b) {
+        if (b.dataset.m) { var m = mine.filter(function (x) { return x.id === +b.dataset.m; })[0]; if (m) Thumbs.iso(b.querySelector('canvas'), Uint8Array.from(m.c), undefined, undefined, G); }
+        else Thumbs.iso(b.querySelector('canvas'), items[+b.dataset.i]._a.after, undefined, undefined, G);
+      });
     }, 20);
   }
   // Editor für eigene Muster
@@ -560,29 +616,71 @@
     editView.setState(edInp);
   }
   edRefresh();
-  $('patNew').onclick = function () { $('patListWrap').hidden = true; $('patEdit').hidden = false; setTimeout(function () { editView.resize(); }, 30); };
-  function edLeave() { edClose(); $('patEdit').hidden = true; $('patListWrap').hidden = false; renderPatterns(); }
-  $('peBack').onclick = edLeave;
+  // Symbole für den Editor: gelöster Würfel (bunt / grau), Gehirn, Speichern
+  function cubeIcon(gray, n) {
+    var faces = [{ o: [20, 4], u: [14, 7], v: [-14, 7], c: 1, g: '#c4c6cc' }, { o: [6, 11], u: [14, 7], v: [0, 16], c: 4, g: '#a9abb2' }, { o: [20, 18], u: [14, -7], v: [0, 16], c: 3, g: '#92949c' }], h = '';
+    faces.forEach(function (f) {
+      for (var a = 0; a < n; a++) for (var b = 0; b < n; b++) {
+        var pt = function (x, y) { return (f.o[0] + f.u[0] * x / n + f.v[0] * y / n).toFixed(2) + ',' + (f.o[1] + f.u[1] * x / n + f.v[1] * y / n).toFixed(2); };
+        h += '<polygon points="' + pt(a, b) + ' ' + pt(a + 1, b) + ' ' + pt(a + 1, b + 1) + ' ' + pt(a, b + 1) + '" fill="' + (gray ? f.g : PAL[f.c]) + '"/>';
+      }
+    });
+    return '<svg viewBox="4 2 32 34" class="cubeIco"><g stroke="#1c1c1f" stroke-width="0.9" stroke-linejoin="round">' + h + '</g><path d="M20 4L34 11V27L20 34L6 27V11Z" fill="none" stroke="#1c1c1f" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  }
+  var SAVE_IC = '<svg viewBox="0 0 32 32"><path d="M6 5h16l4 4v18H6z"/><path d="M10 5v7h10V5"/><path d="M10 27v-8h12v8"/></svg>';
+  function renderEdIcons() { $('peReset').innerHTML = cubeIcon(false, G.N); $('peClear').innerHTML = cubeIcon(true, G.N); $('peCompute').innerHTML = BRAIN; $('peSave').innerHTML = SAVE_IC; }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function loadMine() { try { var a = JSON.parse(store.get('zauber.mypat') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function saveMine(a) { store.set('zauber.mypat', JSON.stringify(a)); }
+  var edOpen = false;
+  $('patNew').onclick = function () {
+    $('patListWrap').hidden = true; $('patEdit').hidden = false; setTimeout(function () { editView.resize(); }, 30);
+    if (!edOpen) { edOpen = true; pushBack('edit', edHideScreen); }
+  };
+  function edHideScreen() { edClose(); edOpen = false; $('patEdit').hidden = true; $('patListWrap').hidden = false; renderPatterns(); }
+  function edLeave() { if (edOpen) { edHideScreen(); popBack('edit'); } }
   $('peReset').onclick = function () { edClose(); edReset(); $('peErr').hidden = true; edRefresh(); };
   $('peClear').onclick = function () { edClose(); edClear(); $('peErr').hidden = true; edRefresh(); };
-  $('peCompute').onclick = function () {
+  function edCompute(cb) {
     var err = $('peErr'); err.hidden = true; edClose();
-    $('peCompute').textContent = T('Berechne ...'); $('peCompute').disabled = true;
-    setTimeout(function () {
-      var r;
-      try { r = solveAny(Array.prototype.slice.call(edInp)); } catch (e) { r = { ok: false, error: 'Unerwarteter Fehler bei der Berechnung.' }; }
-      $('peCompute').textContent = T('Anleitung berechnen'); $('peCompute').disabled = false;
+    if (calcBusy) return; calcBusy = true;
+    var bc = $('peCompute'); bc.classList.add('busy'); bc.disabled = true; $('peSave').disabled = true;
+    solveAsync(Array.prototype.slice.call(edInp), function (r) {
+      calcBusy = false; bc.classList.remove('busy'); bc.disabled = false; $('peSave').disabled = false;
       if (!r.ok) { err.textContent = errText(r); err.hidden = false; return; }
       var all = []; r.phases.forEach(function (p) { all = all.concat(p.moves); });
       if (!all.length) { err.textContent = T('Das ist der gelöste Würfel - es gibt nichts zu bauen.'); err.hidden = false; return; }
       var build = G.invertMoves(all), made = G.applyMoves(G.solvedColors(), build), same = true;
       for (var i = 0; i < G.SZ; i++) if (made[i] !== edInp[i]) { same = false; break; }
       if (!same) { err.textContent = T('Für dieses Muster konnte keine Anleitung berechnet werden.'); err.hidden = false; return; }
-      var it = { name: 'Eigenes Muster', alg: build.join(' '), desc: 'Diese Anleitung verwandelt den gelösten Würfel in dein Muster.' };
-      LL.analyzePattern(it, G, build, Uint8Array.from(edInp));
-      openLesson(PATSEC(), { name: 'Eigenes Muster' }, it, 'patterns');
-    }, 40);
+      cb(build);
+    });
+  }
+  function openPatternView(name, alg, colors) {
+    var it = { name: name, alg: alg, desc: 'Diese Anleitung verwandelt den gelösten Würfel in dein Muster.' };
+    LL.analyzePattern(it, G, G.parseAlg(alg), Uint8Array.from(colors));
+    openLesson(PATSEC(), { name: 'Eigenes Muster' }, it, 'patterns');
+  }
+  $('peCompute').onclick = function () { edCompute(function (build) { openPatternView('Eigenes Muster', build.join(' '), edInp); }); };
+  $('peSave').onclick = function () {
+    edCompute(function (build) {
+      var mine = loadMine(), def = T('Muster {0}', [mine.filter(function (m) { return m.n === G.N; }).length + 1]);
+      openModal('<div class="spdTitle">' + T('Name des Musters') + '</div><input id="saveName" class="txtIn" maxlength="30" autocomplete="off"><div class="row" style="margin-top:12px"><button id="saveCancel">' + T('Abbrechen') + '</button><button id="saveOk" class="primary">' + T('Speichern') + '</button></div>', 'name');
+      $('saveName').value = def;
+      $('saveCancel').onclick = closeModal;
+      $('saveOk').onclick = function () {
+        var nm = $('saveName').value.trim() || def, arr = loadMine();
+        arr.push({ id: Date.now(), name: nm, n: G.N, c: Array.prototype.slice.call(edInp), alg: build.join(' ') });
+        saveMine(arr); closeModal(); edToast('Gespeichert.');
+      };
+    });
   };
+  function confirmDelete(id) {
+    var m = loadMine().filter(function (x) { return x.id === id; })[0]; if (!m) return;
+    openModal('<div class="spdTitle">' + T('Muster löschen?') + '</div><p>' + esc(m.name) + '</p><div class="row"><button id="delNo">' + T('Abbrechen') + '</button><button id="delYes" class="primary">' + T('Löschen') + '</button></div>', 'confirm');
+    $('delNo').onclick = closeModal;
+    $('delYes').onclick = function () { saveMine(loadMine().filter(function (x) { return x.id !== id; })); closeModal(); renderPatterns(); };
+  }
 
   // ---------- Design: Hell/Dunkel + Akzentfarbe ----------
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -620,6 +718,7 @@
     var c4 = accentOf(pendHue), b = $('ringOk');
     b.style.background = c4; b.style.color = onAccent(c4);
     $('themeBtn').style.setProperty('--prev', c4);
+    var sc = $('screen-settings'); sc.style.setProperty('--accent', c4); sc.style.setProperty('--on-accent', onAccent(c4));
   }
   var ring = $('ring'), ringCache = null, ringRect = null;
   function buildRingCache(W, d) {
@@ -674,7 +773,7 @@
       edClose(); editView.setLib(G); edReset(); edRefresh(); $('peErr').hidden = true; renderPatterns();
       auto = false; plan = null; $('solvePane').hidden = true; $('inputPane').hidden = false;
       curSec = n === 4 ? (curSec === 'not3' ? 'not4' : curSec === 'basic' ? 'x4' : curSec) : (curSec === 'x4' ? 'basic' : curSec === 'not4' ? 'not3' : curSec);
-      renderSizeSeg();
+      renderSizeSeg(); renderEdIcons(); warmUp();
     };
   });
 
@@ -705,7 +804,7 @@
     I18n.setLang(el.dataset.l); store.set('zauber.lang', el.dataset.l); refreshLang();
   });
   function refreshLang() {
-    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle();
+    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle(); renderDepthBtn(); renderDepthList(); renderEdIcons();
     $('aPause').textContent = T(autoPaused ? 'Weiter' : 'Pause');
     if (statusKey) updStatus(statusKey[0], statusKey[1]); else updStatus();
     applyDesign();
