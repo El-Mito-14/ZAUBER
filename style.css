@@ -168,3 +168,30 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .lcardWrap .lcard{width:100%;height:100%}
 .delPat{position:absolute;top:4px;right:4px;width:26px;height:26px;padding:0;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
 .delPat svg{width:14px;height:14px;fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round}
+
+/* Update 9b */
+.spdRow.depthRow{height:74px;box-sizing:border-box}
+.duo{display:flex;align-items:center;justify-content:center;gap:8px;height:100%}
+.duo svg.cubeIco{height:34px;width:auto}
+.shufIco{height:26px!important;width:auto}
+.icoBtn svg.shufIco{stroke:var(--accent)}
+#btnUndo svg{stroke:var(--accent);height:28px}
+#modal.big .card{width:100%;max-width:360px;padding:22px}
+#modal.big .bigT{font-size:20px;margin-bottom:8px}
+#modal.big .bigP{font-size:18px;margin:6px 0 18px;word-break:break-word}
+#modal.big .bigRow button{min-height:60px;font-size:18px;font-weight:700;border-radius:14px}
+#modal.kbd{padding:8px}
+#modal.kbd .card{width:100%;max-width:440px;padding:12px}
+.txtIn{min-height:44px;display:flex;align-items:center;font-size:18px;font-weight:600;word-break:break-all}
+.txtIn .caret{display:inline-block;width:2px;height:22px;margin-left:1px;background:var(--accent);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+#kb{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.kbRow{display:flex;gap:5px;justify-content:center}
+.kbKey{flex:1 1 0;min-width:0;height:46px;padding:0;font-size:18px;font-weight:600;border-radius:9px;background:var(--soft);color:var(--ink);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+.kbKey:active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.kbKey.wide{flex:1.5 1 0}
+.kbKey.space{flex:4 1 0}
+.kbKey.ok{flex:2.6 1 0;background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-size:16px}
+.kbKey.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.kbKey svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.kbKey.on svg{fill:currentColor}

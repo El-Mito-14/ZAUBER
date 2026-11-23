@@ -32,10 +32,9 @@
       <button data-m="layer" data-ta="Nur Ebenen"><svg viewBox="6 1 28 36"><path class="cb" d="M20 3L30 8L20 13L10 8Z M10 8V20L20 25V13 M30 8V20L20 25"/><path class="ln" stroke="#22a455" d="M11.5 14.8L18.4 18.3"/><path class="hd" fill="#22a455" stroke="#22a455" d="M19.3 18.7L15.6 18.7L17 15.8Z"/><path class="ln" stroke="#e03131" d="M8.5 27.6Q20.0 35.2 30.6 28.2"/><path class="hd" fill="#e03131" stroke="#e03131" d="M33.4 26.3L31.7 31.0L28.5 26.1Z"/></svg></button>
     </div>
     <div class="row">
-      <button id="btnScramble" data-t>Mischen</button>
-      <button id="btnUndo" data-t>Zurück</button>
-      <button id="btnReset" data-t>Neu</button>
-      <button id="btnAutoSolve" class="primary" data-t>Lösen</button>
+      <button id="btnScramble" class="icoBtn" data-ta="Mischen"></button>
+      <button id="btnUndo" class="icoBtn" data-ta="Zurück" hidden></button>
+      <button id="btnReset" class="icoBtn" data-ta="Neu"></button>
     </div>
   </section>
 
@@ -152,6 +151,7 @@
       <div class="accBody">
         <div class="seg" id="sizeSeg"><button data-n="3">3x3</button><button data-n="4">4x4</button></div>
         <p class="lDesc" data-t>Wähle, ob du mit dem 3x3- oder dem 4x4-Würfel arbeiten möchtest. Das gilt für Würfel, Lösen und Lektionen.</p>
+        <div class="optRow"><span data-t>Zurück-Taste anzeigen</span><button id="undoToggle" class="toggle"></button></div>
       </div>
     </div>
     <div class="acc" id="acc-depth">
