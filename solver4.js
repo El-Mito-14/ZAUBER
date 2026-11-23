@@ -159,6 +159,7 @@
   })();
   function rot3(t3, r) { return [t3[r % 3], t3[(r + 1) % 3], t3[(r + 2) % 3]]; }
   // Zielfarben je Seite (U R F D L B) aus den Eckteilen und der Lage der Zentren bestimmen (beim 4x4 gibt es keine festen Zentren)
+  var STD = [1, 3, 4, 0, 2, 5];
   function deriveTargets(colors) {
     var pieces = cornerSlots4.map(function (ord) { return ord.map(function (i) { return colors[i]; }); }), adj = {}, tset = {};
     pieces.forEach(function (p) { p.forEach(function (c) { adj[c] = adj[c] || {}; p.forEach(function (d) { if (d !== c) adj[c][d] = 1; }); }); for (var r = 0; r < 3; r++) tset[rot3(p, r).join()] = 1; });
@@ -180,6 +181,8 @@
         var ok = cornerSlots4.every(function (ord) { return !!tset[ord.map(function (i) { return T[st[i].face]; }).join()]; });
         if (!ok) continue;
         var sc = 0; CS.idx.forEach(function (i) { if (colors[i] === T[st[i].face]) sc++; });
+        // Wenn das Standard-Farbschema (Gelb oben, Grün vorne ...) zu den Ecken passt, wird es bevorzugt: so endet der Würfel in der gewohnten Ausrichtung
+        if (T.every(function (c, f) { return c === STD[f]; })) sc += 1000;
         if (sc > bestScore) { bestScore = sc; best = T; }
       }
     });

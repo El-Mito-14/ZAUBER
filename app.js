@@ -50,8 +50,7 @@
     }
     return 'M' + pts.join('L') + 'Z';
   }
-  var BRAIN_L = '<path d="M15.2 5.4C13.8 3.9 11 4.1 9.9 6.1 7.6 5.9 6 7.8 6.4 10 4.6 10.9 4.3 13.3 5.5 14.9 4.2 16.7 4.9 19.3 6.9 20.1 6.9 22.5 9.1 24.3 11.3 23.7 12.1 25.7 14.5 26.4 15.2 25"/><path d="M9.6 11.2C11.6 11.2 12 13 13.8 13M8.6 16.2C10.6 16.2 11.4 14.7 13 15.6M11 20.2C12.4 19.6 13.4 20.6 14.4 20.1"/>';
-  var BRAIN = '<svg viewBox="0 0 32 32">' + BRAIN_L + '<g transform="translate(32 0) scale(-1 1)">' + BRAIN_L + '</g><path d="M16 6.2V24.6"/></svg>';
+  var BRAIN = '<svg viewBox="0 0 32 32"><path d="M6.5 17.5C4 15 4.6 10.6 8 8.8 9 5.8 13 4.6 15.6 6.2 18 3.9 22.6 4.6 24.2 7.6 27.6 8 29 11.8 27.6 14.6 29 17.2 27.4 20.4 24.4 20.6 23.2 22.4 20.6 22.4 19.4 21.4 17.4 23.4 14 22.8 12.8 21 10 21.6 7.6 20.2 6.5 17.5Z"/><path d="M11 12.6C12.6 11 15 11.4 15.6 13.4M15.8 8.4C16 10 17.2 11 18.8 11M20 14.4C21.6 12.6 24.2 13 24.6 15.4M10.4 17C12 16.6 13.6 17.2 14.6 18.6M18 17.4C19.6 16.6 21.6 17.2 22.2 18.8"/><path d="M20 22.6C20.6 25.6 24.2 26.4 25.4 24.2M15.6 23.2V28"/></svg>';
   var DEPTH_IC = {
     1: '<svg viewBox="0 0 32 32"><path d="M19 3L8.5 18H15.6L13 29L23.8 13.4H16.6Z"/></svg>',
     2: '<svg viewBox="0 0 32 32"><path d="' + gearPoly(16, 16, 8, 8.6, 12.4) + '"/><circle cx="16" cy="16" r="3.6"/></svg>',
@@ -112,7 +111,7 @@
     $('modalText').innerHTML = html; modalKind = kind || ''; $('modalClose').hidden = (kind === 'speed' || kind === 'name' || kind === 'confirm'); $('modal').hidden = false;
     if (!modalOpen) { modalOpen = true; pushBack('modal', hideModal); }
   }
-  function hideModal() { $('modal').hidden = true; modalOpen = false; modalKind = ''; }
+  function hideModal() { $('modal').className = ''; $('modal').hidden = true; modalOpen = false; modalKind = ''; }
   function closeModal() { if (modalOpen) { hideModal(); popBack('modal'); } }
   $('modalClose').onclick = closeModal;
   $('modal').onclick = function (e) { if (e.target === $('modal')) closeModal(); };
@@ -231,19 +230,6 @@
   }
   function stopAuto() { autoRun = false; autoPaused = false; $('autoBar').hidden = true; cubeView.layerDrag = true; $('aPause').textContent = T('Pause'); }
   function errText(r) { return T(r.error, (r.args || []).map(function (a) { return T(a); })); }
-  $('btnAutoSolve').onclick = function () {
-    if (busy() || calcBusy) return;
-    if (G.isSolved(cubeView.state)) { updStatus('Der Würfel ist schon gelöst.'); return; }
-    updStatus('Berechne Lösung ...'); calcBusy = true;
-    solveAsync(Array.prototype.slice.call(cubeView.state), function (r) {
-      calcBusy = false;
-      if (!r.ok) { $('cubeStatus').textContent = errText(r); return; }
-      autoMoves = []; r.phases.forEach(function (p) { autoMoves = autoMoves.concat(p.moves); });
-      autoIdx = 0; autoRun = true; autoPaused = false; cubeView.layerDrag = false;
-      $('autoBar').hidden = false; $('aPause').textContent = T('Pause');
-      autoStep();
-    });
-  };
   $('aPause').onclick = function () {
     if (!autoRun) return;
     autoPaused = !autoPaused; this.textContent = T(autoPaused ? 'Weiter' : 'Pause');
@@ -549,6 +535,18 @@
   // ---------- Muster ----------
   var PATSEC = function () { return { id: 'pat', name: 'Muster', kind: 'iso', lib: G }; };
   function patItems() { return G.N === 4 ? LL.PAT4 : LL.PAT3; }
+
+  // ---------- Würfel-Schaltflächen als Symbole ----------
+  var undoOn = store.get('zauber.undo') === '1';
+  var SHUFFLE_IC = '<svg viewBox="0 0 28 28" class="shufIco"><path d="M3 8h4.5c5.5 0 5.5 12 11 12H24M3 20h4.5c2 0 3.4-1 4.6-2.5M15.6 10.6C16.8 9.2 17.9 8 20 8H24"/><path d="M21.5 5.2L24.6 8L21.5 10.8M21.5 17.2L24.6 20L21.5 22.8"/></svg>';
+  var UNDO_IC = '<svg viewBox="0 0 28 28"><path d="M10 6L4 12l6 6"/><path d="M4.5 12H16a7 7 0 0 1 0 14h-3"/></svg>';
+  function renderCubeBtns() {
+    $('btnScramble').innerHTML = '<span class="duo">' + cubeIcon(false, G.N) + SHUFFLE_IC + '</span>';
+    $('btnReset').innerHTML = cubeIcon(false, G.N);
+    $('btnUndo').innerHTML = UNDO_IC; $('btnUndo').hidden = !undoOn;
+    var t = $('undoToggle'); t.textContent = T(undoOn ? 'An' : 'Aus'); t.classList.toggle('on', undoOn);
+  }
+  $('undoToggle').onclick = function () { undoOn = !undoOn; store.set('zauber.undo', undoOn ? '1' : '0'); renderCubeBtns(); };
   var DEL_IC = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   function renderPatterns() {
     var items = patItems(), h = '', mine = loadMine().filter(function (m) { return m.n === G.N; });
@@ -665,20 +663,53 @@
   $('peSave').onclick = function () {
     edCompute(function (build) {
       var mine = loadMine(), def = T('Muster {0}', [mine.filter(function (m) { return m.n === G.N; }).length + 1]);
-      openModal('<div class="spdTitle">' + T('Name des Musters') + '</div><input id="saveName" class="txtIn" maxlength="30" autocomplete="off"><div class="row" style="margin-top:12px"><button id="saveCancel">' + T('Abbrechen') + '</button><button id="saveOk" class="primary">' + T('Speichern') + '</button></div>', 'name');
-      $('saveName').value = def;
-      $('saveCancel').onclick = closeModal;
-      $('saveOk').onclick = function () {
-        var nm = $('saveName').value.trim() || def, arr = loadMine();
+      openNameDialog(def, function (nm) {
+        var arr = loadMine();
         arr.push({ id: Date.now(), name: nm, n: G.N, c: Array.prototype.slice.call(edInp), alg: build.join(' ') });
-        saveMine(arr); closeModal(); edToast('Gespeichert.');
-      };
+        saveMine(arr); edToast('Gespeichert.');
+      });
     });
   };
+  // Eigene Tastatur (passt sich Hell/Dunkel und Akzentfarbe an)
+  var KB_ROWS = [['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], ['q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', 'ü'], ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ö', 'ä'], ['SHIFT', 'y', 'x', 'c', 'v', 'b', 'n', 'm', 'BACK']];
+  var KB_BACK = '<svg viewBox="0 0 28 20"><path d="M9 2h15a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9L2 10z"/><path d="M13.5 7l6 6M19.5 7l-6 6"/></svg>';
+  var KB_SHIFT = '<svg viewBox="0 0 24 24"><path d="M12 4l8 9h-5v7H9v-7H4z"/></svg>';
+  function openNameDialog(def, done) {
+    var val = def, shift = false, kb = '';
+    KB_ROWS.forEach(function (row) {
+      kb += '<div class="kbRow">';
+      row.forEach(function (k) {
+        if (k === 'SHIFT') kb += '<button class="kbKey wide" data-k="SHIFT" aria-label="Shift">' + KB_SHIFT + '</button>';
+        else if (k === 'BACK') kb += '<button class="kbKey wide" data-k="BACK" aria-label="Löschen">' + KB_BACK + '</button>';
+        else kb += '<button class="kbKey" data-k="' + k + '">' + k + '</button>';
+      });
+      kb += '</div>';
+    });
+    kb += '<div class="kbRow"><button class="kbKey" data-k="-">-</button><button class="kbKey" data-k=".">.</button><button class="kbKey space" data-k=" ">&nbsp;</button><button class="kbKey" data-k="ß">ß</button><button class="kbKey ok" data-k="OK">' + T('Speichern') + '</button></div>';
+    openModal('<div class="spdTitle">' + T('Name des Musters') + '</div><div id="saveName" class="txtIn"></div><div id="kb">' + kb + '</div>', 'name');
+    $('modal').classList.add('kbd');
+    function show() {
+      $('saveName').innerHTML = esc(val) + '<span class="caret"></span>';
+      Array.prototype.forEach.call(document.querySelectorAll('#kb .kbKey'), function (b) {
+        var k = b.dataset.k; if (k.length === 1 && k !== ' ') b.textContent = shift ? k.toUpperCase() : k;
+        if (k === 'SHIFT') b.classList.toggle('on', shift);
+      });
+    }
+    $('kb').onclick = function (e) {
+      var b = e.target.closest ? e.target.closest('.kbKey') : null; if (!b) return;
+      var k = b.dataset.k;
+      if (k === 'SHIFT') shift = !shift;
+      else if (k === 'BACK') { val = val.slice(0, -1); if (!val) shift = true; }
+      else if (k === 'OK') { var nm = val.trim() || def; closeModal(); done(nm); return; }
+      else if (val.length < 30) { val += shift ? (k === 'ß' ? 'ß' : k.toUpperCase()) : k; shift = false; }
+      show();
+    };
+    shift = !val; show();
+  }
   function confirmDelete(id) {
     var m = loadMine().filter(function (x) { return x.id === id; })[0]; if (!m) return;
-    openModal('<div class="spdTitle">' + T('Muster löschen?') + '</div><p>' + esc(m.name) + '</p><div class="row"><button id="delNo">' + T('Abbrechen') + '</button><button id="delYes" class="primary">' + T('Löschen') + '</button></div>', 'confirm');
-    $('delNo').onclick = closeModal;
+    openModal('<div class="spdTitle bigT">' + T('Muster löschen?') + '</div><p class="bigP">' + esc(m.name) + '</p><div class="row bigRow"><button id="delNo">' + T('Abbrechen') + '</button><button id="delYes" class="primary">' + T('Löschen') + '</button></div>', 'confirm');
+    $('modal').classList.add('big'); $('delNo').onclick = closeModal;
     $('delYes').onclick = function () { saveMine(loadMine().filter(function (x) { return x.id !== id; })); closeModal(); renderPatterns(); };
   }
 
@@ -759,7 +790,7 @@
   });
   ring.addEventListener('pointerup', function () { ringDrag = false; });
   ring.addEventListener('pointercancel', function () { ringDrag = false; });
-  $('ringOk').onclick = function () { hue = pendHue; store.set('zauber.hue', String(Math.round(hue))); applyDesign(); };
+  $('ringOk').onclick = function () { hue = pendHue; store.set('zauber.hue', String(Math.round(hue))); applyDesign(); $('acc-design').classList.remove('open'); };
 
   // ---------- Würfelgröße wechseln ----------
   function renderSizeSeg() { Array.prototype.forEach.call($('sizeSeg').children, function (b) { b.className = (+b.dataset.n === cubeN) ? 'on' : ''; }); }
@@ -773,7 +804,7 @@
       edClose(); editView.setLib(G); edReset(); edRefresh(); $('peErr').hidden = true; renderPatterns();
       auto = false; plan = null; $('solvePane').hidden = true; $('inputPane').hidden = false;
       curSec = n === 4 ? (curSec === 'not3' ? 'not4' : curSec === 'basic' ? 'x4' : curSec) : (curSec === 'x4' ? 'basic' : curSec === 'not4' ? 'not3' : curSec);
-      renderSizeSeg(); renderEdIcons(); warmUp();
+      renderSizeSeg(); renderEdIcons(); renderCubeBtns(); warmUp();
     };
   });
 
@@ -804,7 +835,7 @@
     I18n.setLang(el.dataset.l); store.set('zauber.lang', el.dataset.l); refreshLang();
   });
   function refreshLang() {
-    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle(); renderDepthBtn(); renderDepthList(); renderEdIcons();
+    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle(); renderDepthBtn(); renderDepthList(); renderEdIcons(); renderCubeBtns();
     $('aPause').textContent = T(autoPaused ? 'Weiter' : 'Pause');
     if (statusKey) updStatus(statusKey[0], statusKey[1]); else updStatus();
     applyDesign();
