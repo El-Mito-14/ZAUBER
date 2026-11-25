@@ -50,10 +50,10 @@
     }
     return 'M' + pts.join('L') + 'Z';
   }
-  var BRAIN = '<svg viewBox="0 0 32 32"><path d="M6.5 17.5C4 15 4.6 10.6 8 8.8 9 5.8 13 4.6 15.6 6.2 18 3.9 22.6 4.6 24.2 7.6 27.6 8 29 11.8 27.6 14.6 29 17.2 27.4 20.4 24.4 20.6 23.2 22.4 20.6 22.4 19.4 21.4 17.4 23.4 14 22.8 12.8 21 10 21.6 7.6 20.2 6.5 17.5Z"/><path d="M11 12.6C12.6 11 15 11.4 15.6 13.4M15.8 8.4C16 10 17.2 11 18.8 11M20 14.4C21.6 12.6 24.2 13 24.6 15.4M10.4 17C12 16.6 13.6 17.2 14.6 18.6M18 17.4C19.6 16.6 21.6 17.2 22.2 18.8"/><path d="M20 22.6C20.6 25.6 24.2 26.4 25.4 24.2M15.6 23.2V28"/></svg>';
+  var BRAIN = '<svg viewBox="0 0 32 32"><path d="M21.6 29.6c-.4-2.8 1.6-4.6 2.4-7.4.8-2.6 2.2-4.8 1.6-8.2-.8-5-5.4-8.8-10.6-8.4-3 .2-5.6 1.6-7 3.8-.6 1-.6 2.2-.6 3.4L4.8 17.4c-.4.8.1 1.4.9 1.6l1.5.4-.1 2.4 1 1.6-.6 1.3c1.2 1.4 3 2 4.8 1.9l.1 3.6"/><g transform="translate(10.2 6.6) scale(.5)" stroke-width="3.2"><path d="M6.5 17.5C4 15 4.6 10.6 8 8.8 9 5.8 13 4.6 15.6 6.2 18 3.9 22.6 4.6 24.2 7.6 27.6 8 29 11.8 27.6 14.6 29 17.2 27.4 20.4 24.4 20.6 23.2 22.4 20.6 22.4 19.4 21.4 17.4 23.4 14 22.8 12.8 21 10 21.6 7.6 20.2 6.5 17.5Z"/><path d="M11 12.6C12.6 11 15 11.4 15.6 13.4M15.8 8.4C16 10 17.2 11 18.8 11M20 14.4C21.6 12.6 24.2 13 24.6 15.4M10.4 17C12 16.6 13.6 17.2 14.6 18.6M18 17.4C19.6 16.6 21.6 17.2 22.2 18.8"/></g></svg>';
   var DEPTH_IC = {
     1: '<svg viewBox="0 0 32 32"><path d="M19 3L8.5 18H15.6L13 29L23.8 13.4H16.6Z"/></svg>',
-    2: '<svg viewBox="0 0 32 32"><path d="' + gearPoly(16, 16, 8, 8.6, 12.4) + '"/><circle cx="16" cy="16" r="3.6"/></svg>',
+    2: '<svg viewBox="0 0 32 32"><path d="M12 22.5v-1.6C9.4 19.4 8 17 8 14.2 8 9.7 11.5 6.2 16 6.2s8 3.5 8 8c0 2.8-1.4 5.2-4 6.7v1.6z"/><path d="M12.5 26h7M14 29h4"/></svg>',
     3: BRAIN
   };
   var DEPTHS = [{ id: 1, label: 'Schnell', desc: 'Sofort fertig, die Lösung ist etwas länger.' }, { id: 2, label: 'Mittel', desc: 'Kurze Wartezeit, kürzere Lösung.' }, { id: 3, label: 'Tief', desc: 'Kürzeste Lösung, die Berechnung dauert länger.' }];
@@ -66,7 +66,7 @@
   }
   function renderDepthList() { $('depthList').innerHTML = depthRows(); }
   function setDepth(d) { depth = d; store.set('zauber.depth', String(d)); renderDepthBtn(); renderDepthList(); }
-  function openDepthDialog() { openModal('<div class="spdTitle">' + T('Berechnungstiefe') + '</div>' + depthRows() + '<p class="lDesc" style="margin:10px 0 0">' + T('Je tiefer die Berechnung, desto weniger Züge braucht die Lösung. Beim 3x3 sind es meist etwa 20 Züge, beim 4x4 rund 100. Die Berechnung läuft im Hintergrund.') + '</p>', 'speed'); }
+  function openDepthDialog() { openModal('<div class="spdTitle">' + T('Berechnungstiefe') + '</div>' + depthRows(), 'speed'); }
   $('depthBtn').onclick = openDepthDialog;
   $('depthList').addEventListener('click', function (e) { var el = e.target.closest ? e.target.closest('.depthRow') : null; if (el) setDepth(parseInt(el.dataset.d, 10)); });
 
@@ -93,6 +93,25 @@
   }
   function warmUp() { startWorker(); if (wk) wk.postMessage({ warm: cubeN }); }
   setTimeout(warmUp, 1200);
+
+
+  // ---------- Steuerung ----------
+  var zoomOn = store.get('zauber.zoom') !== '0', vcOn = store.get('zauber.vc') !== '0', vcMode = store.get('zauber.vcm') === 'free' ? 'free' : 'up';
+  function applyCtrl() {
+    CubeView.cfg.zoom = zoomOn; CubeView.cfg.vcMode = vcMode;
+    document.documentElement.setAttribute('data-vc', vcOn ? '1' : '0');
+    if (!zoomOn) CubeView.resetZoom();
+  }
+  function renderCtrl() {
+    var z = $('zoomToggle'), v = $('vcToggle');
+    z.textContent = T(zoomOn ? 'An' : 'Aus'); z.classList.toggle('on', zoomOn);
+    v.textContent = T(vcOn ? 'An' : 'Aus'); v.classList.toggle('on', vcOn);
+    Array.prototype.forEach.call($('vcModeSeg').children, function (b) { b.className = (b.dataset.m === vcMode) ? 'on' : ''; });
+  }
+  $('zoomToggle').onclick = function () { zoomOn = !zoomOn; store.set('zauber.zoom', zoomOn ? '1' : '0'); applyCtrl(); renderCtrl(); };
+  $('vcToggle').onclick = function () { vcOn = !vcOn; store.set('zauber.vc', vcOn ? '1' : '0'); applyCtrl(); renderCtrl(); };
+  Array.prototype.forEach.call($('vcModeSeg').children, function (b) { b.onclick = function () { vcMode = b.dataset.m; store.set('zauber.vcm', vcMode); applyCtrl(); renderCtrl(); }; });
+  applyCtrl();
 
   // ---------- Zurück-Taste (Android) ----------
   var backStack = [], ignorePop = 0;
@@ -428,7 +447,7 @@
   });
 
   // ---------- Lektionen ----------
-  var curSec = cubeN === 4 ? 'x4' : 'basic', lMoves = [], lStates = [], lIdx = 0, lAuto = false, lOpen = false, lCur = null;
+  var notSize = cubeN, curSec = cubeN === 4 ? 'x4' : 'basic', lMoves = [], lStates = [], lIdx = 0, lAuto = false, lOpen = false, lCur = null;
   lessonView = new CubeView($('lesson3d'), { layerDrag: false, lib: C3 });
   lessonView.attachViewCube();
   function secById(id) { return LL.SECTIONS.filter(function (x) { return x.id === id; })[0]; }
@@ -444,18 +463,19 @@
     var a = LL.analyze(it);
     if (sec.kind === 'oll') Thumbs.top(cv, a.full, 'oll');
     else if (sec.kind === 'pll') Thumbs.top(cv, a.full, 'pll', a.arrows);
-    else Thumbs.iso(cv, a.start, undefined, undefined, sec.lib);
+    else Thumbs.iso(cv, a.start, it.view ? it.view[0] : undefined, it.view ? it.view[1] : undefined, sec.lib);
   }
   function renderLessonList() {
     var tabs = $('lessonTabs'); tabs.innerHTML = '';
-    if (curSec === 'not3' && cubeN === 4) curSec = 'not4'; if (curSec === 'not4' && cubeN === 3) curSec = 'not3';
+    var isNot = curSec.indexOf('not') === 0; if (isNot) curSec = notSize === 4 ? 'not4' : 'not3';
     LL.SECTIONS.forEach(function (sec) {
-      if ((sec.id === 'not3' && cubeN === 4) || (sec.id === 'not4' && cubeN === 3)) return;
-      var b = document.createElement('button'); b.textContent = T(sec.name); if (sec.id === curSec) b.className = 'on';
-      b.onclick = function () { curSec = sec.id; renderLessonList(); $('lessonListWrap').scrollTop = 0; };
+      if (sec.id === 'not4') return;
+      var isN = sec.id === 'not3', b = document.createElement('button'); b.textContent = T(sec.name); if (isN ? isNot : sec.id === curSec) b.className = 'on';
+      b.onclick = function () { curSec = isN ? (notSize === 4 ? 'not4' : 'not3') : sec.id; renderLessonList(); $('lessonListWrap').scrollTop = 0; };
       tabs.appendChild(b);
     });
     var sec = secById(curSec), h = '';
+    if (isNot) h += '<div class="seg notSeg"><button data-n="3" class="' + (notSize === 3 ? 'on' : '') + '">3x3</button><button data-n="4" class="' + (notSize === 4 ? 'on' : '') + '">4x4</button></div>';
     sec.groups.forEach(function (g, gi) {
       h += '<div class="cat">' + T(g.name) + '</div><div class="lgrid">';
       g.items.forEach(function (it, ii) {
@@ -466,6 +486,8 @@
     });
     var box = $('lessonList'); box.innerHTML = h;
     box.onclick = function (e) {
+      var ns = e.target.closest ? e.target.closest('.notSeg button') : null;
+      if (ns) { notSize = +ns.dataset.n; curSec = notSize === 4 ? 'not4' : 'not3'; renderLessonList(); return; }
       var b = e.target.closest ? e.target.closest('.lcard') : null; if (!b) return;
       openLesson(sec, sec.groups[+b.dataset.g], sec.groups[+b.dataset.g].items[+b.dataset.i]);
     };
@@ -477,7 +499,7 @@
     if (!lCur) return; var a = LL.analyze(lCur.it), sec = lCur.sec;
     if (sec.kind === 'oll') { Thumbs.top($('lBefore'), a.full, 'oll'); Thumbs.top($('lAfter'), C3.solvedColors(), 'oll'); }
     else if (sec.kind === 'pll') { Thumbs.top($('lBefore'), a.full, 'pll', a.arrows); Thumbs.top($('lAfter'), C3.solvedColors(), 'pll'); }
-    else { Thumbs.iso($('lBefore'), a.start, undefined, undefined, sec.lib); Thumbs.iso($('lAfter'), a.after, undefined, undefined, sec.lib); }
+    else { var vw = lCur.it.view || []; Thumbs.iso($('lBefore'), a.start, vw[0], vw[1], sec.lib); Thumbs.iso($('lAfter'), a.after, vw[0], vw[1], sec.lib); }
   }
   var detailReturn = null;
   function openLesson(sec, grp, it, ret) {
@@ -626,6 +648,7 @@
     return '<svg viewBox="4 2 32 34" class="cubeIco"><g stroke="#1c1c1f" stroke-width="0.9" stroke-linejoin="round">' + h + '</g><path d="M20 4L34 11V27L20 34L6 27V11Z" fill="none" stroke="#1c1c1f" stroke-width="1.6" stroke-linejoin="round"/></svg>';
   }
   var SAVE_IC = '<svg viewBox="0 0 32 32"><path d="M6 5h16l4 4v18H6z"/><path d="M10 5v7h10V5"/><path d="M10 27v-8h12v8"/></svg>';
+  function renderClearIcon() { $('btnClear').innerHTML = cubeIcon(true, 3); }
   function renderEdIcons() { $('peReset').innerHTML = cubeIcon(false, G.N); $('peClear').innerHTML = cubeIcon(true, G.N); $('peCompute').innerHTML = BRAIN; $('peSave').innerHTML = SAVE_IC; }
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function loadMine() { try { var a = JSON.parse(store.get('zauber.mypat') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
@@ -835,7 +858,7 @@
     I18n.setLang(el.dataset.l); store.set('zauber.lang', el.dataset.l); refreshLang();
   });
   function refreshLang() {
-    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle(); renderDepthBtn(); renderDepthList(); renderEdIcons(); renderCubeBtns();
+    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle(); renderDepthBtn(); renderDepthList(); renderEdIcons(); renderCubeBtns(); renderClearIcon(); renderCtrl();
     $('aPause').textContent = T(autoPaused ? 'Weiter' : 'Pause');
     if (statusKey) updStatus(statusKey[0], statusKey[1]); else updStatus();
     applyDesign();

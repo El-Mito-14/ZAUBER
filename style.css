@@ -195,3 +195,15 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .kbKey.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .kbKey svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .kbKey.on svg{fill:currentColor}
+
+/* Update 11 */
+html[data-vc="0"] canvas.vcube{display:none!important}
+.splitBtn{flex:1.5 1 0;display:flex;height:46px;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft);min-width:0}
+.splitBtn>button{height:100%;margin:0;border:0;border-radius:0;box-shadow:none}
+.splitBtn>.depthBtn{flex:0 0 52px;padding:0;background:transparent;border-right:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.splitBtn>.primary{flex:1 1 auto;min-width:0;padding:0 6px}
+#screen-solve .row>button,#screen-solve .row>.splitBtn{height:46px;box-sizing:border-box}
+#screen-solve .row>.icoBtn{flex:0 0 58px}
+#screen-solve .row>button.spdBtn{height:46px}
+.notSeg{margin:0 0 8px}
+.notSeg button{flex:1}
