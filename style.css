@@ -207,3 +207,13 @@ html[data-vc="0"] canvas.vcube{display:none!important}
 #screen-solve .row>button.spdBtn{height:46px}
 .notSeg{margin:0 0 8px}
 .notSeg button{flex:1}
+
+/* Update 12 */
+#lessonListWrap{display:flex;flex-direction:column;overflow:hidden}
+#lessonListWrap .tabsRow{position:static;flex:0 0 auto;padding-bottom:6px}
+#lessonScroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.netPair{display:flex;align-items:center;justify-content:center;gap:2px;width:100%}
+.netThumb{width:46%;aspect-ratio:4/3;display:block;background:var(--soft);border-radius:6px}
+.netArr{font-size:18px;color:var(--mid);line-height:1}
+.ovThumb.net{width:96px}
+.ovThumb.net .thumb{aspect-ratio:4/3}
