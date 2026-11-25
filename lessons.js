@@ -267,7 +267,6 @@
     if (sec.id === 'f2l') return a.inF2L && a.moved.length > 0;
     return a.moved.length > 0;
   }
-  (function () { var kp = SECTIONS.filter(function (x) { return x.id === 'x4'; })[0].groups[1].items; kp[1].view = [0.4, 0.5]; kp[2].view = [-0.6, -0.4]; })();
   SECTIONS.forEach(function (sec) { sec.lib = sec.lib === 4 ? C4 : C; sec.groups.forEach(function (g) { g.items.forEach(function (it) { it._n = sec.lib.N; it._kind = sec.id.indexOf('not') === 0 ? 'not' : ''; }); }); });
   var PAT3 = [
     L('Schachbrett', 'R2 L2 U2 D2 F2 B2', 'Auf jeder Seite wechseln sich zwei Farben wie auf einem Schachbrett ab.'),

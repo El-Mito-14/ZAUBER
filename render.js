@@ -47,11 +47,24 @@
     return ortho(mmul(axisRot(ax, ay, az, ang * frac), A));
   }
   // Blickrichtung d (Weltvektor, zeigt zum Betrachter), "oben" möglichst = Würfel-Oben
-  function lookDir(d) {
-    var l = Math.hypot(d[0], d[1], d[2]), z = [d[0] / l, d[1] / l, d[2] / l], up = Math.abs(z[1]) > 0.99 ? [0, 0, -Math.sign(z[1])] : [0, 1, 0];
+  function lookDirUp(d, up) {
+    var l = Math.hypot(d[0], d[1], d[2]), z = [d[0] / l, d[1] / l, d[2] / l];
     var dd = up[0] * z[0] + up[1] * z[1] + up[2] * z[2], y = [up[0] - dd * z[0], up[1] - dd * z[1], up[2] - dd * z[2]], ly = Math.hypot(y[0], y[1], y[2]); y = y.map(function (v) { return v / ly; });
     var x = [y[1] * z[2] - y[2] * z[1], y[2] * z[0] - y[0] * z[2], y[0] * z[1] - y[1] * z[0]];
     return [x[0], x[1], x[2], y[0], y[1], y[2], z[0], z[1], z[2]];
+  }
+  function lookDir(d) {
+    var l = Math.hypot(d[0], d[1], d[2]);
+    return lookDirUp(d, Math.abs(d[1] / l) > 0.99 ? [0, 0, -Math.sign(d[1])] : [0, 1, 0]);
+  }
+  // Frei: die Achse, die dem aktuellen "oben" am nächsten bleibt, wird senkrecht ausgerichtet (kürzeste Drehung)
+  function lookDirFree(d, R) {
+    var l = Math.hypot(d[0], d[1], d[2]), dn = [d[0] / l, d[1] / l, d[2] / l], best = null, bd = 1e9;
+    [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]].forEach(function (u) {
+      if (Math.abs(u[0] * dn[0] + u[1] * dn[1] + u[2] * dn[2]) > 0.99) return;
+      var M = lookDirUp(dn, u), a = relAngle(R, M); if (a < bd) { bd = a; best = M; }
+    });
+    return best;
   }
 
   var CFG = { zoom: true, vcMode: 'up' }, ALL = [];
@@ -211,14 +224,9 @@
     if (CFG.vcMode === 'free') { var nv = [[0, 1, 0], [1, 0, 0], [0, 0, 1], [0, -1, 0], [-1, 0, 0], [0, 0, -1]][face]; this.lookAtDir(nv); return; }
     this.target = eulerR(VC_TARGETS[face][0], VC_TARGETS[face][1]); this.exact = true;
   };
+  P.resetDir = function (d) { this.R = lookDir(d); this.target = null; this.zoom = 1; };
   P.lookAtDir = function (d) {
-    if (CFG.vcMode === 'free') { // kürzeste Drehung, die d zum Betrachter bringt, ohne "oben" festzuhalten
-      var R = this.R, l = Math.hypot(d[0], d[1], d[2]), dn = [d[0] / l, d[1] / l, d[2] / l];
-      var v = [R[0] * dn[0] + R[1] * dn[1] + R[2] * dn[2], R[3] * dn[0] + R[4] * dn[1] + R[5] * dn[2], R[6] * dn[0] + R[7] * dn[1] + R[8] * dn[2]];
-      var ax = v[1], ay = -v[0], az = 0, ang = Math.acos(Math.max(-1, Math.min(1, v[2])));
-      if (Math.hypot(ax, ay) < 1e-6) { if (v[2] < 0) { ax = 0; ay = 1; } else { this.target = null; return; } }
-      this.target = ortho(mmul(axisRot(ax, ay, az, ang), R)); this.exact = true; return;
-    }
+    if (CFG.vcMode === 'free') { this.target = lookDirFree(d, this.R); this.exact = true; return; }
     this.target = lookDir(d); this.exact = true;
   };
   P.drawVC = function () {

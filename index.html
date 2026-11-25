@@ -89,7 +89,7 @@
   <section id="screen-lessons" class="screen">
     <div id="lessonListWrap">
       <div class="tabsRow"><div class="seg" id="lessonTabs"></div><button class="gear inline" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button></div>
-      <div id="lessonList"></div>
+      <div id="lessonScroll"><div id="lessonList"></div></div>
     </div>
     <div id="lessonDetail" class="pane" hidden>
       <div class="topRow"><button id="lBack" data-t>Zurück</button><div id="lTitle" class="ltitle"></div><button class="infoBtn" id="btnLInfo" aria-label="i">i</button><button class="gear inline" data-ta="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="none" stroke-width="3"/><g stroke-width="3.4"><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4M4.8 4.8l2.4 2.4M16.8 16.8l2.4 2.4M4.8 19.2l2.4-2.4M16.8 7.2l2.4-2.4"/></g></svg></button></div>
@@ -137,11 +137,14 @@
   <section id="screen-settings" class="screen">
     <div class="topRow"><button id="setBack" data-t>Zurück</button><div class="ltitle" data-t>Einstellungen</div><span class="spacer"></span></div>
     <div class="acc" id="acc-design">
-      <button class="accHead"><span data-t>Design</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="accHead"><span data-t>Design und Anzeige</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <div class="accBody">
         <div class="row"><button id="themeBtn" class="themeBtn"></button></div>
         <div class="ringWrap"><canvas id="ring"></canvas><button id="ringOk" data-t>Fertig</button></div>
         <div class="optRow"><span data-t>Gedrehte Ebene hervorheben</span><button id="hlToggle" class="toggle"></button></div>
+        <p class="lDesc" style="margin:10px 0 6px" data-t>Darstellung in den Lektionen</p>
+        <div class="seg" id="lvSeg"><button data-m="3d">3D</button><button data-m="2d">2D</button><button data-m="both" data-t>Beides</button></div>
+        <p class="lDesc" data-t>Bei Anfänger, F2L und 4x4: 3D-Würfel, flaches 2D-Bild (Vorher und Nachher) oder beides.</p>
         <p class="lDesc" data-t>Beim Abspielen von Lösung und Lektionen wird die Ebene, die gedreht wird, umrandet.</p>
       </div>
     </div>

@@ -50,10 +50,10 @@
     }
     return 'M' + pts.join('L') + 'Z';
   }
-  var BRAIN = '<svg viewBox="0 0 32 32"><path d="M21.6 29.6c-.4-2.8 1.6-4.6 2.4-7.4.8-2.6 2.2-4.8 1.6-8.2-.8-5-5.4-8.8-10.6-8.4-3 .2-5.6 1.6-7 3.8-.6 1-.6 2.2-.6 3.4L4.8 17.4c-.4.8.1 1.4.9 1.6l1.5.4-.1 2.4 1 1.6-.6 1.3c1.2 1.4 3 2 4.8 1.9l.1 3.6"/><g transform="translate(10.2 6.6) scale(.5)" stroke-width="3.2"><path d="M6.5 17.5C4 15 4.6 10.6 8 8.8 9 5.8 13 4.6 15.6 6.2 18 3.9 22.6 4.6 24.2 7.6 27.6 8 29 11.8 27.6 14.6 29 17.2 27.4 20.4 24.4 20.6 23.2 22.4 20.6 22.4 19.4 21.4 17.4 23.4 14 22.8 12.8 21 10 21.6 7.6 20.2 6.5 17.5Z"/><path d="M11 12.6C12.6 11 15 11.4 15.6 13.4M15.8 8.4C16 10 17.2 11 18.8 11M20 14.4C21.6 12.6 24.2 13 24.6 15.4M10.4 17C12 16.6 13.6 17.2 14.6 18.6M18 17.4C19.6 16.6 21.6 17.2 22.2 18.8"/></g></svg>';
+  var BRAIN = '<svg viewBox="0 0 32 32"><path d="M21 29.6C21.2 26.4 23.4 24.6 24.8 21.6 26.4 18 26.4 13.4 23.8 9.8 21.2 6.2 16.6 4.6 12.6 5.8 9 6.9 7.2 9.8 7.4 13.2L5.6 16.6C5.3 17.2 5.7 17.7 6.4 17.8L7.2 17.9 7.1 19.6C7.1 20.2 7.4 20.5 7.8 20.6 7.5 21.2 7.5 21.9 7.9 22.4 8.3 23 9.2 23.2 10.2 23.3L12.6 23.6C13.2 23.7 13.6 24.2 13.6 25V29.6"/><g transform="translate(9.6 5.4) scale(.52)" stroke-width="3.4"><path d="M6.5 17.5C4 15 4.6 10.6 8 8.8 9 5.8 13 4.6 15.6 6.2 18 3.9 22.6 4.6 24.2 7.6 27.6 8 29 11.8 27.6 14.6 29 17.2 27.4 20.4 24.4 20.6 23.2 22.4 20.6 22.4 19.4 21.4 17.4 23.4 14 22.8 12.8 21 10 21.6 7.6 20.2 6.5 17.5Z"/><path d="M11 12.6C12.6 11 15 11.4 15.6 13.4M15.8 8.4C16 10 17.2 11 18.8 11M20 14.4C21.6 12.6 24.2 13 24.6 15.4M10.4 17C12 16.6 13.6 17.2 14.6 18.6M18 17.4C19.6 16.6 21.6 17.2 22.2 18.8"/></g></svg>';
   var DEPTH_IC = {
     1: '<svg viewBox="0 0 32 32"><path d="M19 3L8.5 18H15.6L13 29L23.8 13.4H16.6Z"/></svg>',
-    2: '<svg viewBox="0 0 32 32"><path d="M12 22.5v-1.6C9.4 19.4 8 17 8 14.2 8 9.7 11.5 6.2 16 6.2s8 3.5 8 8c0 2.8-1.4 5.2-4 6.7v1.6z"/><path d="M12.5 26h7M14 29h4"/></svg>',
+    2: '<svg viewBox="0 0 32 32"><g transform="translate(2.6 4.6) scale(.84)"><path d="M12 22.5v-1.6C9.4 19.4 8 17 8 14.2 8 9.7 11.5 6.2 16 6.2s8 3.5 8 8c0 2.8-1.4 5.2-4 6.7v1.6z"/><path d="M12.5 26h7M14 29h4"/></g><path d="M16.0 5.8L16.0 3.0M22.2 8.0L24.0 5.9M9.8 8.0L8.0 5.9M25.5 14.1L28.3 13.7M6.5 14.1L3.7 13.7"/></svg>',
     3: BRAIN
   };
   var DEPTHS = [{ id: 1, label: 'Schnell', desc: 'Sofort fertig, die Lösung ist etwas länger.' }, { id: 2, label: 'Mittel', desc: 'Kurze Wartezeit, kürzere Lösung.' }, { id: 3, label: 'Tief', desc: 'Kürzeste Lösung, die Berechnung dauert länger.' }];
@@ -459,11 +459,29 @@
     if (sec.id === 'f2l') return T('Paar einsetzen');
     return firstSentence(T(it.desc || ''));
   }
+  var lvMode = ['3d', '2d', 'both'].indexOf(store.get('zauber.lv')) >= 0 ? store.get('zauber.lv') : '3d';
+  function netSec(sec) { return sec.id === 'basic' || sec.id === 'x4' || sec.id === 'f2l'; }
+  function renderLvSeg() { Array.prototype.forEach.call($('lvSeg').children, function (b) { b.className = (b.dataset.m === lvMode) ? 'on' : ''; }); }
+  Array.prototype.forEach.call($('lvSeg').children, function (b) {
+    b.onclick = function () {
+      lvMode = b.dataset.m; store.set('zauber.lv', lvMode); renderLvSeg();
+      if ($('screen-lessons').classList.contains('active')) { if (lOpen) drawLessonThumbs(); else renderLessonList(); }
+    };
+  });
+  function cardThumbHtml(sec) {
+    if (!netSec(sec) || lvMode === '3d') return '<canvas class="thumb"></canvas>';
+    var pair = '<div class="netPair"><canvas class="netThumb"></canvas><span class="netArr">&rsaquo;</span><canvas class="netThumb"></canvas></div>';
+    return lvMode === '2d' ? pair : '<canvas class="thumb"></canvas>' + pair;
+  }
   function drawThumb(cv, sec, it) {
     var a = LL.analyze(it);
     if (sec.kind === 'oll') Thumbs.top(cv, a.full, 'oll');
     else if (sec.kind === 'pll') Thumbs.top(cv, a.full, 'pll', a.arrows);
-    else Thumbs.iso(cv, a.start, it.view ? it.view[0] : undefined, it.view ? it.view[1] : undefined, sec.lib);
+    else {
+      var card = cv.parentNode;
+      if (netSec(sec) && lvMode !== '3d') { var nets = card.querySelectorAll('.netThumb'); drawNet(nets[0], a.start, -1, sec.lib.N); drawNet(nets[1], a.after, -1, sec.lib.N); }
+      if (!netSec(sec) || lvMode !== '2d') Thumbs.iso(cv, a.start, it.view ? it.view[0] : undefined, it.view ? it.view[1] : undefined, sec.lib);
+    }
   }
   function renderLessonList() {
     var tabs = $('lessonTabs'); tabs.innerHTML = '';
@@ -471,7 +489,7 @@
     LL.SECTIONS.forEach(function (sec) {
       if (sec.id === 'not4') return;
       var isN = sec.id === 'not3', b = document.createElement('button'); b.textContent = T(sec.name); if (isN ? isNot : sec.id === curSec) b.className = 'on';
-      b.onclick = function () { curSec = isN ? (notSize === 4 ? 'not4' : 'not3') : sec.id; renderLessonList(); $('lessonListWrap').scrollTop = 0; };
+      b.onclick = function () { curSec = isN ? (notSize === 4 ? 'not4' : 'not3') : sec.id; renderLessonList(); $('lessonScroll').scrollTop = 0; };
       tabs.appendChild(b);
     });
     var sec = secById(curSec), h = '';
@@ -480,7 +498,7 @@
       h += '<div class="cat">' + T(g.name) + '</div><div class="lgrid">';
       g.items.forEach(function (it, ii) {
         if (!LL.validFor(sec, it)) return;
-        h += '<button class="lcard" data-g="' + gi + '" data-i="' + ii + '"><canvas class="thumb"></canvas><b>' + T(it.name) + '</b><span class="hint">' + cardHint(sec, it) + '</span><small>' + it.alg + '</small></button>';
+        h += '<button class="lcard" data-g="' + gi + '" data-i="' + ii + '">' + cardThumbHtml(sec) + '<b>' + T(it.name) + '</b><span class="hint">' + cardHint(sec, it) + '</span><small>' + it.alg + '</small></button>';
       });
       h += '</div>';
     });
@@ -492,13 +510,15 @@
       openLesson(sec, sec.groups[+b.dataset.g], sec.groups[+b.dataset.g].items[+b.dataset.i]);
     };
     setTimeout(function () {
-      box.querySelectorAll('.lcard').forEach(function (b) { drawThumb(b.querySelector('canvas'), sec, sec.groups[+b.dataset.g].items[+b.dataset.i]); });
+      box.querySelectorAll('.lcard').forEach(function (b) { drawThumb(b.querySelector('canvas.thumb') || b.querySelector('canvas'), sec, sec.groups[+b.dataset.g].items[+b.dataset.i]); });
     }, 20);
   }
   function drawLessonThumbs() {
     if (!lCur) return; var a = LL.analyze(lCur.it), sec = lCur.sec;
+    var net = netSec(sec) && lvMode === '2d'; Array.prototype.forEach.call(document.querySelectorAll('#lessonDetail .ovThumb'), function (o) { o.classList.toggle('net', net); });
     if (sec.kind === 'oll') { Thumbs.top($('lBefore'), a.full, 'oll'); Thumbs.top($('lAfter'), C3.solvedColors(), 'oll'); }
     else if (sec.kind === 'pll') { Thumbs.top($('lBefore'), a.full, 'pll', a.arrows); Thumbs.top($('lAfter'), C3.solvedColors(), 'pll'); }
+    else if (netSec(sec) && lvMode === '2d') { drawNet($('lBefore'), a.start, -1, sec.lib.N); drawNet($('lAfter'), a.after, -1, sec.lib.N); }
     else { var vw = lCur.it.view || []; Thumbs.iso($('lBefore'), a.start, vw[0], vw[1], sec.lib); Thumbs.iso($('lAfter'), a.after, vw[0], vw[1], sec.lib); }
   }
   var detailReturn = null;
@@ -513,7 +533,7 @@
     $('lessonListWrap').hidden = true; $('lessonDetail').hidden = false;
     if (!lOpen) { lOpen = true; pushBack('lesson', hideLesson); }
     setTimeout(function () {
-      lessonView.resize(); lessonView.clearQueue(); lessonView.anim = null; lessonView.setState(lStates[0]); renderLesson(); drawLessonThumbs();
+      lessonView.resize(); lessonView.clearQueue(); lessonView.anim = null; lessonView.resetDir([0, 1, 1]); lessonView.setState(lStates[0]); renderLesson(); drawLessonThumbs();
     }, 40);
   }
   $('btnLInfo').onclick = function () {
@@ -571,7 +591,7 @@
   $('undoToggle').onclick = function () { undoOn = !undoOn; store.set('zauber.undo', undoOn ? '1' : '0'); renderCubeBtns(); };
   var DEL_IC = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   function renderPatterns() {
-    var items = patItems(), h = '', mine = loadMine().filter(function (m) { return m.n === G.N; });
+    var items = patItems(), h = '<div class="seg notSeg patSeg"><button data-n="3" class="' + (G.N === 3 ? 'on' : '') + '">3x3</button><button data-n="4" class="' + (G.N === 4 ? 'on' : '') + '">4x4</button></div>', mine = loadMine().filter(function (m) { return m.n === G.N; });
     if (mine.length) {
       h += '<div class="cat">' + T('Meine Muster') + '</div><div class="lgrid">';
       mine.forEach(function (m) {
@@ -587,6 +607,8 @@
     h += '</div>';
     var box = $('patList'); box.innerHTML = h;
     box.onclick = function (e) {
+      var ps = e.target.closest ? e.target.closest('.patSeg button') : null;
+      if (ps) { setCubeSize(+ps.dataset.n); return; }
       var d = e.target.closest ? e.target.closest('.delPat') : null;
       if (d) { confirmDelete(+d.dataset.del); return; }
       var b = e.target.closest ? e.target.closest('.lcard') : null; if (!b) return;
@@ -817,9 +839,8 @@
 
   // ---------- Würfelgröße wechseln ----------
   function renderSizeSeg() { Array.prototype.forEach.call($('sizeSeg').children, function (b) { b.className = (+b.dataset.n === cubeN) ? 'on' : ''; }); }
-  Array.prototype.forEach.call($('sizeSeg').children, function (b) {
-    b.onclick = function () {
-      var n = +b.dataset.n; if (n === cubeN) return;
+  function setCubeSize(n) {
+      if (n === cubeN) return;
       cubeN = n; store.set('zauber.n', String(n)); G = n === 4 ? C4 : C3;
       stopAuto(); cubeView.setLib(G); previewView.setLib(G); solveView.setLib(G);
       undoStack = []; moves = 0; updStatus();
@@ -828,8 +849,8 @@
       auto = false; plan = null; $('solvePane').hidden = true; $('inputPane').hidden = false;
       curSec = n === 4 ? (curSec === 'not3' ? 'not4' : curSec === 'basic' ? 'x4' : curSec) : (curSec === 'x4' ? 'basic' : curSec === 'not4' ? 'not3' : curSec);
       renderSizeSeg(); renderEdIcons(); renderCubeBtns(); warmUp();
-    };
-  });
+  }
+  Array.prototype.forEach.call($('sizeSeg').children, function (b) { b.onclick = function () { setCubeSize(+b.dataset.n); }; });
 
   function renderHlToggle() { var b = $('hlToggle'); b.textContent = T(hlOn ? 'An' : 'Aus'); b.classList.toggle('on', hlOn); }
   $('hlToggle').onclick = function () {
@@ -858,7 +879,7 @@
     I18n.setLang(el.dataset.l); store.set('zauber.lang', el.dataset.l); refreshLang();
   });
   function refreshLang() {
-    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle(); renderDepthBtn(); renderDepthList(); renderEdIcons(); renderCubeBtns(); renderClearIcon(); renderCtrl();
+    I18n.apply(); renderSpeedBtns(); renderLangList(); renderSizeSeg(); renderHlToggle(); renderDepthBtn(); renderDepthList(); renderEdIcons(); renderCubeBtns(); renderClearIcon(); renderCtrl(); renderLvSeg();
     $('aPause').textContent = T(autoPaused ? 'Weiter' : 'Pause');
     if (statusKey) updStatus(statusKey[0], statusKey[1]); else updStatus();
     applyDesign();
