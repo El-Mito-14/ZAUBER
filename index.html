@@ -50,10 +50,9 @@
       </div>
       <div id="errBox" class="err" hidden></div>
       <div class="row">
-        <button id="btnClear" data-t>Leeren</button>
+        <button id="btnClear" class="icoBtn" data-ta="Leeren"></button>
         <button id="btnFromCube" data-t>Vom 3D-Würfel</button>
-        <button id="depthBtn" class="spdBtn depthBtn"></button>
-        <button id="btnCompute" class="primary" data-t>Lösung berechnen</button>
+        <div class="splitBtn"><button id="depthBtn" class="depthBtn"></button><button id="btnCompute" class="primary" data-t>Lösung berechnen</button></div>
       </div>
     </div>
 
@@ -152,6 +151,16 @@
         <div class="seg" id="sizeSeg"><button data-n="3">3x3</button><button data-n="4">4x4</button></div>
         <p class="lDesc" data-t>Wähle, ob du mit dem 3x3- oder dem 4x4-Würfel arbeiten möchtest. Das gilt für Würfel, Lösen und Lektionen.</p>
         <div class="optRow"><span data-t>Zurück-Taste anzeigen</span><button id="undoToggle" class="toggle"></button></div>
+      </div>
+    </div>
+    <div class="acc" id="acc-ctrl">
+      <button class="accHead"><span data-t>Steuerung</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="accBody">
+        <div class="optRow"><span data-t>Zoomen mit zwei Fingern</span><button id="zoomToggle" class="toggle"></button></div>
+        <div class="optRow"><span data-t>Ansichtswürfel anzeigen</span><button id="vcToggle" class="toggle"></button></div>
+        <p class="lDesc" style="margin-bottom:6px" data-t>Ausrichtung mit dem Ansichtswürfel</p>
+        <div class="seg" id="vcModeSeg"><button data-m="up" data-t>Aufrecht</button><button data-m="free" data-t>Frei</button></div>
+        <p class="lDesc" data-t>Aufrecht: Oben bleibt oben und Unten bleibt unten. Frei: Die Ansicht dreht sich ohne jede Einschränkung genau zur angetippten Seite, Kante oder Ecke.</p>
       </div>
     </div>
     <div class="acc" id="acc-depth">

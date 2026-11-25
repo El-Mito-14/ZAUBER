@@ -18,23 +18,13 @@
   function faces(map, tpl) { return 'UDLRFB'.split('').map(function (f) { return N(map(f), tpl, f); }); }
   var NOT3 = { id: 'not3', name: 'Notation', kind: 'iso', lib: 3, groups: [
     { name: 'Außenseiten', items: faces(function (f) { return f; }, T_CW) },
-    { name: 'Richtungen', items: [N("R", T_CW, 'R'), N("R'", T_CCW, 'R'), N('R2', T_HALF, 'R')] },
-    { name: 'Zwei Schichten', items: faces(function (f) { return f.toLowerCase(); }, T_WIDE) },
-    { name: 'Mittelschichten', items: [
-      { name: 'M', alg: 'M', tpl: ['Die mittlere Schicht zwischen Links und Rechts, in Richtung von L.'] },
-      { name: 'E', alg: 'E', tpl: ['Die mittlere Schicht zwischen Oben und Unten, in Richtung von D.'] },
-      { name: 'S', alg: 'S', tpl: ['Die mittlere Schicht zwischen Vorne und Hinten, in Richtung von F.'] }] },
-    { name: 'Würfeldrehung', items: [
-      { name: 'x', alg: 'x', tpl: ['Den ganzen Würfel drehen wie die Seite {0} (nur die Blickrichtung ändert sich, die Teile bleiben zusammen).', FD.R] },
-      { name: 'y', alg: 'y', tpl: ['Den ganzen Würfel drehen wie die Seite {0} (nur die Blickrichtung ändert sich, die Teile bleiben zusammen).', FD.U] },
-      { name: 'z', alg: 'z', tpl: ['Den ganzen Würfel drehen wie die Seite {0} (nur die Blickrichtung ändert sich, die Teile bleiben zusammen).', FD.F] }] }
+    { name: 'Richtungen', items: [N("R", T_CW, 'R'), N("R'", T_CCW, 'R'), N('R2', T_HALF, 'R')] }
   ] };
   var NOT4 = { id: 'not4', name: 'Notation', kind: 'iso', lib: 4, groups: [
     { name: 'Außenseiten', items: faces(function (f) { return f; }, T_CW) },
     { name: 'Richtungen', items: [N("R", T_CW, 'R'), N("R'", T_CCW, 'R'), N('R2', T_HALF, 'R')] },
     { name: 'Zwei Außenschichten', items: faces(function (f) { return f + f.toLowerCase(); }, T_WIDE) },
-    { name: 'Innere Schicht', items: faces(function (f) { return f.toLowerCase(); }, T_INNER) },
-    { name: 'Würfeldrehung', items: NOT3.groups[4].items }
+    { name: 'Innere Schicht', items: faces(function (f) { return f.toLowerCase(); }, T_INNER) }
   ] };
   var SECTIONS = [NOT3, NOT4,
     { id: 'x4', name: '4x4', kind: 'iso', lib: 4, groups: [
@@ -200,6 +190,7 @@
     moves.forEach(function (m) { total = comp(total, Lb.permOfMove(m)); });
     var ninv = inverse(total), solved = Lb.solvedColors(), full = new Uint8Array(Lb.SZ), gray = new Uint8Array(Lb.SZ), moved = [], rel = {};
     for (var j = 0; j < Lb.SZ; j++) { full[j] = solved[ninv[j]]; if (total[j] !== j) { moved.push(j); rel[Lb.stickers[j].p.join()] = 1; } }
+    if (it.name === 'PLL-Parität') Lb.stickers.forEach(function (sk) { if (sk.n[2] !== 0 && Math.abs(sk.p[0]) === 0.5 && Math.abs(sk.p[1]) === 0.5) rel[sk.p.join()] = 1; });
     for (j = 0; j < Lb.SZ; j++) gray[j] = rel[Lb.stickers[j].p.join()] ? full[j] : 6;
     it._a = { lib: Lb, moves: moves, start: gray, full: full, after: Lb.applyPerm(gray, total), moved: moved, rot: false, arrows: [], yBefore: 0, inU: false, inF2L: false, uKept: true, nonrot: total };
     return it._a;
@@ -276,6 +267,7 @@
     if (sec.id === 'f2l') return a.inF2L && a.moved.length > 0;
     return a.moved.length > 0;
   }
+  (function () { var kp = SECTIONS.filter(function (x) { return x.id === 'x4'; })[0].groups[1].items; kp[1].view = [0.4, 0.5]; kp[2].view = [-0.6, -0.4]; })();
   SECTIONS.forEach(function (sec) { sec.lib = sec.lib === 4 ? C4 : C; sec.groups.forEach(function (g) { g.items.forEach(function (it) { it._n = sec.lib.N; it._kind = sec.id.indexOf('not') === 0 ? 'not' : ''; }); }); });
   var PAT3 = [
     L('Schachbrett', 'R2 L2 U2 D2 F2 B2', 'Auf jeder Seite wechseln sich zwei Farben wie auf einem Schachbrett ab.'),
